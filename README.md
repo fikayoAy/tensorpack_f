@@ -42,9 +42,7 @@ Working with complex, multi-dimensional data (tensors) is difficult. Converting 
 ## How It Works
 
 ### 1. Adding Custom Transformations
-<video src="docs/commands/img/add-transform_compressed.mp4" width="100%">
-  Your browser does not support the video tag.
-</video>
+![Adding Custom Transformations](docs/commands/img/add-transform_compressed.gif)
 
 ```bash
 # Add a custom transformation
@@ -59,9 +57,7 @@ tensorpack add-transform \
 ```
 
 #### Custom file loader Extension via custom Transform
-<video src="docs/commands/img/add-transfrom1_compressed.mp4" width="100%">
-  Your browser does not support the video tag.
-</video>
+![Custom File Loader Extension](docs/commands/img/add-transfrom1_compressed.mp4)
 
 TensorPack allows you to extend its file loading capabilities by registering a custom transform that acts as a file loader for new formats. For example, you can add support for `.parquet` files (or any other format not natively supported) by:
 
@@ -72,9 +68,7 @@ TensorPack allows you to extend its file loading capabilities by registering a c
 This approach enables seamless integration of proprietary or emerging file formats into your TensorPack workflows, without modifying the core codebase. The video above demonstrates registering and using a custom `.parquet` file loader as a transform.
 
 ### 2. Entity Search and Analysis
-<video src="docs/commands/img/entity-search_compressed.mp4" width="100%">
-  Your browser does not support the video tag.
-</video>
+![Entity Search](docs/commands/img/entity-search_compressed.mp4)
 
 ```bash
 # Search for entities across datasets
@@ -87,9 +81,7 @@ tensorpack traverse-graph \
 ```
 
 ### 3. Semantic Connection Discovery
-<video src="docs/commands/img/Sematic-connection-discovery_compressed.mp4" width="100%">
-  Your browser does not support the video tag.
-</video>
+![Semantic Connections](docs/commands/img/Sematic-connection-discovery_compressed.mp4)
 
 ```bash
 # Discover semantic connections
@@ -104,9 +96,7 @@ tensorpack discover-connections \
 ```
 
 ### 4. Semantic Analysis
-<video src="docs/commands/img/sematic-analysis_compressed.mp4" width="100%">
-  Your browser does not support the video tag.
-</video>
+![Semantic Analysis](docs/commands/img/sematic-analysis_compressed.mp4)
 
 ```bash
 # Perform semantic analysis
