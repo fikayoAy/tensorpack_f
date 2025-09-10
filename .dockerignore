@@ -1,0 +1,4 @@
+.tensorpack/license/
+# Optional: ignore caches and pyc
+__pycache__/
+*.pyc
