@@ -31,6 +31,9 @@
       'img/Sematic-connection-discovery_compressed.mp4'
     ];
 
+    const params = new URLSearchParams(window.location.search);
+    // expected value: relative path like 'img/add-transform_compressed.mp4' or just filename
+    const requestedVideo = params.get('video');
     const container = document.getElementById('videos');
 
     videos.forEach(src => {
@@ -49,7 +52,7 @@
       source.src = src;
       video.appendChild(source);
 
-      // Hover to play
+  // Hover to play
       card.addEventListener('mouseenter', () => {
         video.muted = true;
         video.play().catch(() => {});
@@ -82,6 +85,22 @@
       card.appendChild(video);
       card.appendChild(meta);
       container.appendChild(card);
+
+      // If this video matches the ?video= param, autoplay and scroll to it
+      if (requestedVideo) {
+        const normalizedRequested = requestedVideo.replace(/^\//, '');
+        const matches = (src === normalizedRequested) || src.endsWith('/' + normalizedRequested) || src.endsWith(normalizedRequested);
+        if (matches) {
+          // allow autoplay by keeping muted initially, then let the user unmute
+          video.muted = true;
+          video.controls = true;
+          // small delay to allow layout and loading
+          setTimeout(() => {
+            video.play().catch(() => {});
+            try { card.scrollIntoView({behavior: 'smooth', block: 'center'}); } catch(e){}
+          }, 200);
+        }
+      }
     });
   </script>
 </body>

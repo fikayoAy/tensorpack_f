@@ -42,8 +42,9 @@ Working with complex, multi-dimensional data (tensors) is difficult. Converting 
 ## How It Works
 
 ### 1. Adding Custom Transformations
-[![Adding Custom Transformations](docs/commands/img/add-transform.png)](docs/commands/img/add-transform_compressed.mp4)
+[![Adding Custom Transformations](docs/commands/img/add-transform.png)](docs/commands/player.html?video=img/add-transform_compressed.mp4)
 
+Open the interactive demo player to watch this and other command demos: [Demo player — plays all command videos](docs/commands/player.html)
 ```bash
 # Add a custom transformation
 tensorpack add-transform \
