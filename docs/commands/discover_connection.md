@@ -140,6 +140,6 @@ else:
 
 Below is an example demo video showing semantic connection discovery:
 
-[Semantic connection discovery demo](img/Sematic-connection-discovery.mp4)
+[Semantic connection discovery demo](img/Sematic-connection-discovery_compressed.mp4)
 
 ---
