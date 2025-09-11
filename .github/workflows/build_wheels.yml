@@ -40,6 +40,19 @@ jobs:
         python setup.py build_ext --inplace
         python setup.py bdist_wheel
 
+  - name: Show dist contents
+    run: |
+    echo "Contents of dist/"
+    python - <<'PY'
+import os
+if os.path.exists('dist'):
+  for root, dirs, files in os.walk('dist'):
+    for f in files:
+      print(os.path.join(root, f))
+else:
+  print('dist not found')
+PY
+
     - name: Upload wheel as artifact
       uses: actions/upload-artifact@v4
       with:
