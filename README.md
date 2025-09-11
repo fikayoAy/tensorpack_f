@@ -57,7 +57,7 @@ tensorpack add-transform \
 ```
 
 #### Custom file loader Extension via custom Transform
-![Custom File Loader Extension](docs/commands/img/add-transfrom1.mp4)
+[![Custom File Loader Extension](docs/commands/img/add-transform1.png)](https://youtu.be/WqD-OlNqjMs)
 
 TensorPack allows you to extend its file loading capabilities by registering a custom transform that acts as a file loader for new formats. For example, you can add support for `.parquet` files (or any other format not natively supported) by:
 
@@ -68,7 +68,7 @@ TensorPack allows you to extend its file loading capabilities by registering a c
 This approach enables seamless integration of proprietary or emerging file formats into your TensorPack workflows, without modifying the core codebase. The video above demonstrates registering and using a custom `.parquet` file loader as a transform.
 
 ### 2. Entity Search and Analysis
-![Entity Search](docs/commands/img/entity-search.mp4)
+[![Entity Search](docs/commands/img/entity-search.png)](https://youtu.be/5YMdhLGR6zs)
 
 ```bash
 # Search for entities across datasets
@@ -81,7 +81,7 @@ tensorpack traverse-graph \
 ```
 
 ### 3. Semantic Connection Discovery
-![Semantic Connections](docs/commands/img/Sematic-connection-discovery.mp4)
+[![Semantic Connections](docs/commands/img/sematic1.png)](https://youtu.be/r9pMhrHTcfI)
 
 ```bash
 # Discover semantic connections
@@ -96,7 +96,7 @@ tensorpack discover-connections \
 ```
 
 ### 4. Semantic Analysis
-![Semantic Analysis](docs/commands/img/sematic-analysis.mp4)
+[![Semantic Analysis](docs/commands/img/sematic.png)](https://youtu.be/CdMyyu1ZKeo)
 
 ```bash
 # Perform semantic analysis
