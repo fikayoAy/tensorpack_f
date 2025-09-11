@@ -10,6 +10,8 @@ TensorPack is a software product with a command-line interface (CLI) that helps 
 
 _High-level problems TensorPack aims to solve._
 
+
+---
 ### Core Problem ❗
 
 _Complex, multi-dimensional data is hard to convert and analyze while preserving relationships._  
@@ -101,6 +103,8 @@ python tensorpack.py add-transform \
 
 See the full registration reference: `docs/commands/add_transfrom.md`.
 
+---
+
 📦 List installed transforms of type `custom`
 ```bash
 python tensorpack.py list-transforms --data-type custom
@@ -155,6 +159,8 @@ tensorpack traverse-graph \
   --output "entity_analysis"
 ```
 
+---
+
 ### 3. Semantic Connection Discovery 🔗
 _Discover semantic links, pathways and contextual relationships between datasets._  
 🔗 Click the thumbnail to open the demo video.
@@ -172,6 +178,8 @@ tensorpack discover-connections \
   --output "semantic_connections"
 ```
 
+---
+
 ### 4. Semantic Analysis 🧠
 _Perform in-depth semantic extraction and visualization to contextualize dataset content._  
 🧠 Click the thumbnail to open the demo video.
@@ -188,6 +196,8 @@ tensorpack analyze-semantic \
   --export-formats "html,json,neo4j" \
   --output "semantic_analysis"
 ```
+
+---
 
 Each command supports various export formats:
 - `json`: Structured data output
