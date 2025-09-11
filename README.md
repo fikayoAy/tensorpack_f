@@ -1,24 +1,25 @@
 # TensorPack
 
-## What it is 💡
+## What it is
 
 _A compact CLI toolkit to convert, analyze and discover relationships across datasets (tensors, matrices, tabular, text and more)._  
 
 TensorPack is a software product with a command-line interface (CLI) that helps convert and analyze data between different formats. It focuses on converting tensors (multi-dimensional arrays) to matrices (2D arrays) and vice versa, and it also helps discover and understand connections between different datasets.
 
-## Pain Point Analysis ⚠️
+## Pain Point Analysis
 
 _High-level problems TensorPack aims to solve._
 
 
 ---
-### Core Problem ❗
+### Core Problem
 
 _Complex, multi-dimensional data is hard to convert and analyze while preserving relationships._  
 
 Working with complex, multi-dimensional data (tensors) is difficult. Converting them into usable formats often breaks important relationships, and analyzing connections across different datasets requires time, expertise, and custom code.
+---
 
-### How TensorPack Helps ✅
+### How TensorPack Helps
 
 _Core capabilities that make data conversion and discovery practical and repeatable._
 
@@ -36,7 +37,7 @@ _Core capabilities that make data conversion and discovery practical and repeata
   - Export results in multiple formats for further analysis.
 
 
-### Benefits ✨
+### Benefits
 
 _What teams gain by using TensorPack._
 
@@ -50,14 +51,15 @@ _What teams gain by using TensorPack._
   - **Data/Analysis:** json, csv, excel, parquet, sqlite
   - **Documentation:** markdown, html
 - **Contextual Understanding:** Retains semantic context and relationships across all operations, ensuring results remain meaningful and interpretable.
+---
 
-## How It Works ⚙️
+## How It Works
 
 _A brief workflow overview showing what you can do with TensorPack._
 
-### 1. Adding Custom Transformations 🔧
+### 1. Adding Custom Transformations
 _Register reusable transforms to convert, load or extend data formats (Python, executables, configs)._  
-▶️ Click the thumbnail to open the demo video.
+Click the thumbnail to open the demo video.
 [![Adding Custom Transformations](docs/commands/img/add-transform.png)](https://youtu.be/MPjSGoGCelQ)
 
 ```bash
@@ -72,14 +74,14 @@ tensorpack add-transform \
   --export-formats "json,html,excel"
 ```
 
-#### 📦 Custom file loader — Extension via custom Transform
+#### Custom file loader — Extension via custom Transform
 _Add a transform that can act as a file loader (for example, register a Parquet loader)._  
-📦 Click the thumbnail to open the demo video.
+Click the thumbnail to open the demo video.
 [![Custom File Loader Extension](docs/commands/img/add-transform1.png)](https://youtu.be/WqD-OlNqjMs)
 
 ### Simple walkthrough
 
-🔧 Register a new custom Python transform (parquet handler)
+Register a new custom Python transform (parquet handler)
 ```bash
 python tensorpack.py add-transform \
   --name parquet_handler \
@@ -105,7 +107,7 @@ See the full registration reference: `docs/commands/add_transfrom.md`.
 
 ---
 
-📦 List installed transforms of type `custom`
+List installed transforms of type `custom`
 ```bash
 python tensorpack.py list-transforms --data-type custom
 ```
@@ -114,7 +116,7 @@ python tensorpack.py list-transforms --data-type custom
 |---|---|
 | `--data-type custom` | Filters the list to transforms registered under the `custom` category. |
 
-▶️ Use the registered transform while traversing and searching entities
+Use the registered transform while traversing and searching entities
 ```bash
 python tensorpack.py traverse-graph \
   --inputs genes.parquet \
@@ -144,9 +146,9 @@ TensorPack allows you to extend its file loading capabilities by registering a c
 
 This approach enables seamless integration of proprietary or emerging file formats into your TensorPack workflows, without modifying the core codebase. The video above demonstrates registering and using a custom `.parquet` file loader as a transform.
 
-### 2. Entity Search & Analysis 🔎
+### 2. Entity Search & Analysis
 _Search, extract and analyze named entities across multiple datasets for discovery and linking._  
-🔎 Click the thumbnail to open the demo video.
+Click the thumbnail to open the demo video.
 [![Entity Search](docs/commands/img/entity-search.png)](https://youtu.be/5YMdhLGR6zs)
 
 ```bash
@@ -161,9 +163,9 @@ tensorpack traverse-graph \
 
 ---
 
-### 3. Semantic Connection Discovery 🔗
+### 3. Semantic Connection Discovery
 _Discover semantic links, pathways and contextual relationships between datasets._  
-🔗 Click the thumbnail to open the demo video.
+Click the thumbnail to open the demo video.
 [![Semantic Connections](docs/commands/img/sematic1.png)](https://youtu.be/r9pMhrHTcfI)
 
 ```bash
@@ -180,9 +182,9 @@ tensorpack discover-connections \
 
 ---
 
-### 4. Semantic Analysis 🧠
+### 4. Semantic Analysis
 _Perform in-depth semantic extraction and visualization to contextualize dataset content._  
-🧠 Click the thumbnail to open the demo video.
+Click the thumbnail to open the demo video.
 [![Semantic Analysis](docs/commands/img/sematic.png)](https://youtu.be/CdMyyu1ZKeo)
 
 ```bash
