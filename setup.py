@@ -115,7 +115,6 @@ if cythonize is not None:
     ext_modules = cythonize(
         extensions,
         compiler_directives={"language_level": "3", "boundscheck": False, "wraparound": False},
-        build_dir=str(HERE / "build"),
     )
 else:
     # If Cython isn't available, setup() will try to compile from .c files if present.
@@ -129,7 +128,13 @@ setup(
     author_email="Ayodeleanjola4@gmail.com",
     url="https://github.com/fikayoAy/tensorpack",
     packages=["tensorpack"],
+    py_modules=["tensorpack"],
     ext_modules=ext_modules,
+    entry_points={
+        'console_scripts': [
+            'tensorpack=tensorpack.cli:main',
+        ],
+    },
     install_requires=[
         "numpy>=1.19.0",
         "pandas>=1.0.0",
