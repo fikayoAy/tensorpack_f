@@ -3,6 +3,9 @@ name: Publish Wheels on Release
 on:
   release:
     types: [created]
+ 
+permissions:
+  contents: write
 
 jobs:
   build-and-publish:
