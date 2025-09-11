@@ -31,6 +31,7 @@ jobs:
         python -m pip wheel . -w dist
 
     - name: Show dist contents
+      shell: bash
       run: |
         echo "Contents of dist/"
         python - <<'PY'
