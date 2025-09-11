@@ -17,8 +17,8 @@ _High-level problems TensorPack aims to solve._
 _Complex, multi-dimensional data is hard to convert and analyze while preserving relationships._  
 
 Working with complex, multi-dimensional data (tensors) is difficult. Converting them into usable formats often breaks important relationships, and analyzing connections across different datasets requires time, expertise, and custom code.
----
 
+---
 ### How TensorPack Helps
 
 _Core capabilities that make data conversion and discovery practical and repeatable._
