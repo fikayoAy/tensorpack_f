@@ -1,32 +1,42 @@
 # TensorPack
 
-## What it is
+## What it is 💡
+
+_A compact CLI toolkit to convert, analyze and discover relationships across datasets (tensors, matrices, tabular, text and more)._  
 
 TensorPack is a software product with a command-line interface (CLI) that helps convert and analyze data between different formats. It focuses on converting tensors (multi-dimensional arrays) to matrices (2D arrays) and vice versa, and it also helps discover and understand connections between different datasets.
 
-## Pain Point Analysis
+## Pain Point Analysis ⚠️
 
-### Core Problem
+_High-level problems TensorPack aims to solve._
+
+### Core Problem ❗
+
+_Complex, multi-dimensional data is hard to convert and analyze while preserving relationships._  
 
 Working with complex, multi-dimensional data (tensors) is difficult. Converting them into usable formats often breaks important relationships, and analyzing connections across different datasets requires time, expertise, and custom code.
 
-### How TensorPack Helps
+### How TensorPack Helps ✅
+
+_Core capabilities that make data conversion and discovery practical and repeatable._
 
 1. **Seamless Data Conversion**
-    - Easily switch between tensors (multi-dimensional arrays) and matrices (2D arrays).
-    - Preserve relationships and metadata during transformations.
+  - Easily switch between tensors (multi-dimensional arrays) and matrices (2D arrays).
+  - Preserve relationships and metadata during transformations.
 2. **Custom Data Transformations**
-    - Define your own transformation rules using Python, external executables, or config files.
-    - Adapt to diverse data sources and domains without rewriting code.
+  - Define your own transformation rules using Python, external executables, or config files.
+  - Adapt to diverse data sources and domains without rewriting code.
 3. **Relationship Discovery**
-    - Automatically detect and analyze relationships across datasets.
-    - Includes semantic analysis, entity linking, and visualization support.
+  - Automatically detect and analyze relationships across datasets.
+  - Includes semantic analysis, entity linking, and visualization support.
 4. **Explorable Connections**
-    - Navigate data as a graph: find pathways, discover bridges, and search across datasets.
-    - Export results in multiple formats for further analysis.
+  - Navigate data as a graph: find pathways, discover bridges, and search across datasets.
+  - Export results in multiple formats for further analysis.
 
 
-### Benefits
+### Benefits ✨
+
+_What teams gain by using TensorPack._
 
 - **Reduced Complexity:** Simplifies handling of multi-dimensional, multi-modal data.
 - **Semantic Preservation:** Maintains meaning and relationships across all transformations.
@@ -34,12 +44,14 @@ Working with complex, multi-dimensional data (tensors) is difficult. Converting 
 - **Flexibility:** Handles standard formats (json, csv, excel) and multi-modal inputs.
 - **Custom Transform Extensibility:** Users can add support for proprietary formats (text, tabular, images, videos) via Python, external executables, or configuration files.
 - **Rich Visualization & Export:**
-    - **Visuals:** Interactive html visualizations, png static plots, publication-ready pdf reports
-    - **Data/Analysis:** json, csv, excel, parquet, sqlite
-    - **Documentation:** markdown, html
+  - **Visuals:** Interactive html visualizations, png static plots, publication-ready pdf reports
+  - **Data/Analysis:** json, csv, excel, parquet, sqlite
+  - **Documentation:** markdown, html
 - **Contextual Understanding:** Retains semantic context and relationships across all operations, ensuring results remain meaningful and interpretable.
 
-## How It Works
+## How It Works ⚙️
+
+_A brief workflow overview showing what you can do with TensorPack._
 
 ### 1. Adding Custom Transformations 🔧
 _Register reusable transforms to convert, load or extend data formats (Python, executables, configs)._  
