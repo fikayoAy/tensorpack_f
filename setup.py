@@ -20,7 +20,11 @@ def discover_extensions(package_dir: Path) -> Dict[str, List[Extension]]:
     groups: Dict[str, List[Extension]] = {"core": [], "license": []}
     pyx_files = sorted(package_dir.glob("*.pyx"))
     for p in pyx_files:
-        mod_name = f"{package_dir.name}.{p.stem}"
+        # Construct a stable package module name. Use the package folder
+        # `tensorpack` as the top-level package so Cython receives a valid
+        # module name (avoids cases where package_dir.name could be '.' or
+        # otherwise produce a leading dot).
+        mod_name = f"tensorpack.{p.stem}"
         ext = Extension(mod_name, [str(p)])
         if p.stem == "license_manager":
             groups.setdefault("license", []).append(ext)
