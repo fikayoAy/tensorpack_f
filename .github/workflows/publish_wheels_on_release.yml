@@ -34,14 +34,14 @@ jobs:
       run: |
         echo "Contents of dist/"
         python - <<'PY'
-import os
-if os.path.exists('dist'):
-    for root, dirs, files in os.walk('dist'):
-        for f in files:
-            print(os.path.join(root, f))
-else:
-    print('dist not found')
-PY
+        import os
+        if os.path.exists('dist'):
+            for root, dirs, files in os.walk('dist'):
+                for f in files:
+                    print(os.path.join(root, f))
+        else:
+            print('dist not found')
+        PY
 
     - name: Upload wheel to GitHub Release
       uses: softprops/action-gh-release@v1
