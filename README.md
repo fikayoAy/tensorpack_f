@@ -41,7 +41,8 @@ Working with complex, multi-dimensional data (tensors) is difficult. Converting 
 
 ## How It Works
 
-### 1. Adding Custom Transformations
+### 1. Adding Custom Transformations 🔧
+_Register reusable transforms to convert, load or extend data formats (Python, executables, configs)._  
 ▶️ Click the thumbnail to open the demo video.
 [![Adding Custom Transformations](docs/commands/img/add-transform.png)](https://youtu.be/MPjSGoGCelQ)
 
@@ -57,7 +58,8 @@ tensorpack add-transform \
   --export-formats "json,html,excel"
 ```
 
-#### Custom file loader Extension via custom Transform
+#### 📦 Custom file loader — Extension via custom Transform
+_Add a transform that can act as a file loader (for example, register a Parquet loader)._  
 📦 Click the thumbnail to open the demo video.
 [![Custom File Loader Extension](docs/commands/img/add-transform1.png)](https://youtu.be/WqD-OlNqjMs)
 
@@ -126,7 +128,8 @@ TensorPack allows you to extend its file loading capabilities by registering a c
 
 This approach enables seamless integration of proprietary or emerging file formats into your TensorPack workflows, without modifying the core codebase. The video above demonstrates registering and using a custom `.parquet` file loader as a transform.
 
-### 2. Entity Search and Analysis
+### 2. Entity Search & Analysis 🔎
+_Search, extract and analyze named entities across multiple datasets for discovery and linking._  
 🔎 Click the thumbnail to open the demo video.
 [![Entity Search](docs/commands/img/entity-search.png)](https://youtu.be/5YMdhLGR6zs)
 
@@ -140,7 +143,8 @@ tensorpack traverse-graph \
   --output "entity_analysis"
 ```
 
-### 3. Semantic Connection Discovery
+### 3. Semantic Connection Discovery 🔗
+_Discover semantic links, pathways and contextual relationships between datasets._  
 🔗 Click the thumbnail to open the demo video.
 [![Semantic Connections](docs/commands/img/sematic1.png)](https://youtu.be/r9pMhrHTcfI)
 
@@ -156,7 +160,8 @@ tensorpack discover-connections \
   --output "semantic_connections"
 ```
 
-### 4. Semantic Analysis
+### 4. Semantic Analysis 🧠
+_Perform in-depth semantic extraction and visualization to contextualize dataset content._  
 🧠 Click the thumbnail to open the demo video.
 [![Semantic Analysis](docs/commands/img/sematic.png)](https://youtu.be/CdMyyu1ZKeo)
 
