@@ -1,0 +1,61 @@
+name: Publish Wheels on Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-and-publish:
+    name: Build and publish wheels (${{ matrix.os }} / Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install cython numpy
+
+    - name: Build wheel
+      run: |
+        python -m pip wheel . -w dist
+
+  - name: Show dist contents
+    run: |
+    echo "Contents of dist/"
+    python - <<'PY'
+import os
+if os.path.exists('dist'):
+  for root, dirs, files in os.walk('dist'):
+    for f in files:
+      print(os.path.join(root, f))
+else:
+  print('dist not found')
+PY
+
+    - name: Upload wheel to GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/*.whl
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Optionally upload to PyPI
+      if: ${{ secrets.PYPI_USERNAME && secrets.PYPI_PASSWORD }}
+      run: |
+        python -m pip install --upgrade pip
+        pip install twine
+        python -m twine upload dist/*.whl
+      env:
+        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
