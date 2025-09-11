@@ -59,6 +59,63 @@ tensorpack add-transform \
 #### Custom file loader Extension via custom Transform
 [![Custom File Loader Extension](docs/commands/img/add-transform1.png)](https://youtu.be/WqD-OlNqjMs)
 
+### Simple walkthrough
+
+🔧 Register a new custom Python transform (parquet handler)
+```bash
+python tensorpack.py add-transform \
+  --name parquet_handler \
+  --data-type custom \
+  --source-type python \
+  --source ./parquet_handler.py \
+  --properties handles_format=.parquet,maintains_metadata=true \
+  --test-data sample.parquet \
+  --test-output test_output.np
+```
+
+| Flag | Description |
+|---|---|
+| `--name parquet_handler` | The registry name for the transform. |
+| `--data-type custom` | Category under which the transform is registered (used to filter transforms). |
+| `--source-type python` | Indicates the transform is loaded from a Python file. |
+| `--source ./parquet_handler.py` | Path to the Python source implementing the transform. |
+| `--properties handles_format=.parquet,maintains_metadata=true` | Transform metadata describing handled formats and behavior. |
+| `--test-data sample.parquet` | Run the transform on this sample file as a sanity check during registration. |
+| `--test-output test_output.np` | Path to save the test run output for inspection. |
+
+See the full registration reference: `docs/commands/add_transfrom.md`.
+
+📦 List installed transforms of type `custom`
+```bash
+python tensorpack.py list-transforms --data-type custom
+```
+
+| Flag | Description |
+|---|---|
+| `--data-type custom` | Filters the list to transforms registered under the `custom` category. |
+
+▶️ Use the registered transform while traversing and searching entities
+```bash
+python tensorpack.py traverse-graph \
+  --inputs genes.parquet \
+  --search-entity "PPARG" \
+  --include-metadata \
+  --export-formats all \
+  --output search.json \
+  --apply-transform parquet_handler \
+  --verbose
+```
+
+| Flag | Description |
+|---|---|
+| `--inputs genes.parquet` | Input dataset(s) to analyze; transforms that declare `handles_format` can be applied automatically. |
+| `--search-entity "PPARG"` | The entity term to search for across datasets. |
+| `--include-metadata` | Include dataset and transform metadata in the output for richer context. |
+| `--export-formats all` | Export results in all supported formats (json, html, csv, etc.). |
+| `--output search.json` | Path to save the exported search results. |
+| `--apply-transform parquet_handler` | Explicitly apply the named transform during data loading. |
+| `--verbose` | Enable detailed logging during the run. |
+
 TensorPack allows you to extend its file loading capabilities by registering a custom transform that acts as a file loader for new formats. For example, you can add support for `.parquet` files (or any other format not natively supported) by:
 
 1. **Implementing a custom Python transform** that loads the new file type (e.g., using `pandas.read_parquet`).
