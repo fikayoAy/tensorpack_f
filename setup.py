@@ -2,6 +2,7 @@ from pathlib import Path
 from setuptools import setup, Extension
 import sys
 import os
+from typing import Union, Dict, List
 
 try:
     from Cython.Build import cythonize
@@ -9,17 +10,18 @@ except Exception:  # pragma: no cover - runtime fallback
     cythonize = None
 
 
-def discover_extensions(package_dir: Path) -> dict[str, list[Extension]]:
+def discover_extensions(package_dir: Path) -> Dict[str, List[Extension]]:
     """Discover .pyx files and group them.
 
     Returns a mapping of group name -> list[Extension]. By default we classify
     anything named `license_manager` into the `license` group, and everything
     else into `core`.
     """
-    groups: dict[str, list[Extension]] = {"core": [], "license": []}
+    groups: Dict[str, List[Extension]] = {"core": [], "license": []}
     pyx_files = sorted(package_dir.glob("*.pyx"))
     for p in pyx_files:
-        ext = get_extension(p.stem)
+        mod_name = f"{package_dir.name}.{p.stem}"
+        ext = Extension(mod_name, [str(p)])
         if p.stem == "license_manager":
             groups.setdefault("license", []).append(ext)
         else:
@@ -27,9 +29,26 @@ def discover_extensions(package_dir: Path) -> dict[str, list[Extension]]:
     return groups
 
 
-from typing import Union
+def add_numpy_include_dirs(ext_list: list[Extension]):
+    """If numpy is available, append its include dirs to Extension objects.
 
-def parse_groups_arg(argv: list[str]) -> Union[list[str], None]:
+    This is executed at import time during CI where numpy gets installed
+    before running the build step. If numpy is not importable, this is a no-op.
+    """
+    try:
+        import numpy
+        inc = numpy.get_include()
+    except Exception:
+        return
+    for e in ext_list:
+        # ensure include_dirs exists and append numpy include
+        if getattr(e, 'include_dirs', None) is None:
+            e.include_dirs = [inc]
+        else:
+            e.include_dirs.append(inc)
+
+
+def parse_groups_arg(argv: List[str]) -> Union[List[str], None]:
     """Look for --groups=core,license or read BUILD_GROUPS env var.
 
     Returns list of groups to build or None to build all.
@@ -60,13 +79,6 @@ if not PKG_INIT.exists():
 
 # Source directory is the same as HERE since .pyx files are in root
 TP_DIR = HERE
-
-# Include both source .pyx files and generated .c files
-def get_extension(name: str) -> Extension:
-    pyx_file = TP_DIR / f"{name}.pyx"
-    c_file = TP_DIR / "build" / "Users" / "ayode" / "ConstantA" / "tensorpack" / f"{name}.c"
-    sources = [str(c_file) if c_file.exists() else str(pyx_file)]
-    return Extension(f"tensorpack.{name}", sources=sources)
 
 groups_map = discover_extensions(TP_DIR)
 
@@ -105,9 +117,9 @@ setup(
     name="tensorpack",
     version="0.1",
     description="Tensorpack project - compiled extensions",
-    author="Your Name",
-    author_email="your.email@example.com",
-    url="https://github.com/yourusername/tensorpack",
+    author="Fikayomi Ayodele",
+    author_email="Ayodeleanjola4@gmail.com",
+    url="https://github.com/fikayoAy/tensorpack",
     packages=["tensorpack"],
     ext_modules=ext_modules,
     install_requires=[
