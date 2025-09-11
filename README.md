@@ -42,7 +42,7 @@ Working with complex, multi-dimensional data (tensors) is difficult. Converting 
 ## How It Works
 
 ### 1. Adding Custom Transformations
-[![Adding Custom Transformations](docs/commands/img/add-transform.png)](docs/commands/img/add-transform_compressed.webm)
+[![Adding Custom Transformations](docs/commands/img/add-transform.png)](https://youtu.be/MPjSGoGCelQ)
 
 ```bash
 # Add a custom transformation
