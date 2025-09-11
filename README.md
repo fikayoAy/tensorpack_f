@@ -42,10 +42,8 @@ Working with complex, multi-dimensional data (tensors) is difficult. Converting 
 ## How It Works
 
 ### 1. Adding Custom Transformations
-[| Demo | Play |
-|---|---|
-| [![Adding Custom Transformations](docs/commands/img/add-transform.png)](https://youtu.be/MPjSGoGCelQ) | 👉 Click the thumbnail to open the demo (opens on YouTube). [Watch on YouTube](https://youtu.be/MPjSGoGCelQ) 🎬 |
-]
+▶️ Click the thumbnail to open the demo video.
+[![Adding Custom Transformations](docs/commands/img/add-transform.png)](https://youtu.be/MPjSGoGCelQ)
 
 ```bash
 # Add a custom transformation
@@ -60,10 +58,8 @@ tensorpack add-transform \
 ```
 
 #### Custom file loader Extension via custom Transform
-[| Demo | Play |
-|---|---|
-| [![Custom File Loader Extension](docs/commands/img/add-transform1.png)](https://youtu.be/WqD-OlNqjMs) | 👉 Click the thumbnail to open the demo (opens on YouTube). [Watch on YouTube](https://youtu.be/WqD-OlNqjMs) 🔗 |
-]
+📦 Click the thumbnail to open the demo video.
+[![Custom File Loader Extension](docs/commands/img/add-transform1.png)](https://youtu.be/WqD-OlNqjMs)
 
 ### Simple walkthrough
 
@@ -131,10 +127,8 @@ TensorPack allows you to extend its file loading capabilities by registering a c
 This approach enables seamless integration of proprietary or emerging file formats into your TensorPack workflows, without modifying the core codebase. The video above demonstrates registering and using a custom `.parquet` file loader as a transform.
 
 ### 2. Entity Search and Analysis
-[| Demo | Play |
-|---|---|
-| [![Entity Search](docs/commands/img/entity-search.png)](https://youtu.be/5YMdhLGR6zs) | 👉 Click the thumbnail to open the demo (opens on YouTube). [Watch on YouTube](https://youtu.be/5YMdhLGR6zs) ▶️ |
-]
+🔎 Click the thumbnail to open the demo video.
+[![Entity Search](docs/commands/img/entity-search.png)](https://youtu.be/5YMdhLGR6zs)
 
 ```bash
 # Search for entities across datasets
@@ -147,10 +141,8 @@ tensorpack traverse-graph \
 ```
 
 ### 3. Semantic Connection Discovery
-[| Demo | Play |
-|---|---|
-| [![Semantic Connections](docs/commands/img/sematic1.png)](https://youtu.be/r9pMhrHTcfI) | 👉 Click the thumbnail to open the demo (opens on YouTube). [Watch on YouTube](https://youtu.be/r9pMhrHTcfI) 🔍 |
-]
+🔗 Click the thumbnail to open the demo video.
+[![Semantic Connections](docs/commands/img/sematic1.png)](https://youtu.be/r9pMhrHTcfI)
 
 ```bash
 # Discover semantic connections
@@ -165,10 +157,8 @@ tensorpack discover-connections \
 ```
 
 ### 4. Semantic Analysis
-[| Demo | Play |
-|---|---|
-| [![Semantic Analysis](docs/commands/img/sematic.png)](https://youtu.be/CdMyyu1ZKeo) | 👉 Click the thumbnail to open the demo (opens on YouTube). [Watch on YouTube](https://youtu.be/CdMyyu1ZKeo) 📊 |
-]
+🧠 Click the thumbnail to open the demo video.
+[![Semantic Analysis](docs/commands/img/sematic.png)](https://youtu.be/CdMyyu1ZKeo)
 
 ```bash
 # Perform semantic analysis
