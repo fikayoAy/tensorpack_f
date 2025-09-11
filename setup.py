@@ -29,7 +29,7 @@ def discover_extensions(package_dir: Path) -> Dict[str, List[Extension]]:
     return groups
 
 
-def add_numpy_include_dirs(ext_list: list[Extension]):
+def add_numpy_include_dirs(ext_list: List[Extension]):
     """If numpy is available, append its include dirs to Extension objects.
 
     This is executed at import time during CI where numpy gets installed
@@ -98,6 +98,10 @@ else:
 extensions = []
 for g in selected_groups:
     extensions.extend(groups_map.get(g, []))
+
+# If numpy is installed in the build environment, add its include dirs so
+# C extensions can compile against numpy headers.
+add_numpy_include_dirs(extensions)
 
 if not extensions:
     print("No extension modules found for the selected groups. Nothing to build.")
