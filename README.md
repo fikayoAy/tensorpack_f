@@ -43,6 +43,7 @@ Working with complex, multi-dimensional data (tensors) is difficult. Converting 
 
 ### 1. Adding Custom Transformations
 [![Adding Custom Transformations](docs/commands/img/add-transform.png)](https://youtu.be/MPjSGoGCelQ)
+👉 Click the thumbnail to open the demo (opens on YouTube). 🎬
 
 ```bash
 # Add a custom transformation
@@ -58,6 +59,7 @@ tensorpack add-transform \
 
 #### Custom file loader Extension via custom Transform
 [![Custom File Loader Extension](docs/commands/img/add-transform1.png)](https://youtu.be/WqD-OlNqjMs)
+👉 Click the thumbnail to open the demo (opens on YouTube). 🔗
 
 ### Simple walkthrough
 
@@ -126,6 +128,7 @@ This approach enables seamless integration of proprietary or emerging file forma
 
 ### 2. Entity Search and Analysis
 [![Entity Search](docs/commands/img/entity-search.png)](https://youtu.be/5YMdhLGR6zs)
+👉 Click the thumbnail to open the demo (opens on YouTube). ▶️
 
 ```bash
 # Search for entities across datasets
@@ -139,6 +142,7 @@ tensorpack traverse-graph \
 
 ### 3. Semantic Connection Discovery
 [![Semantic Connections](docs/commands/img/sematic1.png)](https://youtu.be/r9pMhrHTcfI)
+👉 Click the thumbnail to open the demo (opens on YouTube). 🔍
 
 ```bash
 # Discover semantic connections
@@ -154,6 +158,7 @@ tensorpack discover-connections \
 
 ### 4. Semantic Analysis
 [![Semantic Analysis](docs/commands/img/sematic.png)](https://youtu.be/CdMyyu1ZKeo)
+👉 Click the thumbnail to open the demo (opens on YouTube). 📊
 
 ```bash
 # Perform semantic analysis
