@@ -1,35 +1,59 @@
-import argparse
-import importlib.metadata as m
+"""CLI shim for the tensorpack package.
+
+This module provides a stable entry point that console scripts can target
+(`tensorpack.cli:main`) and allows `python -m tensorpack` to work via
+`tensorpack.__main__` delegating here.
+"""
+from __future__ import annotations
 import sys
-
-from .. import __version__ as _version  # optional if package provides __version__
-
-
-def _build_parser():
-    p = argparse.ArgumentParser(prog='tensorpack', description='Tensorpack CLI')
-    p.add_argument('--version', action='store_true', help='Show package version')
-    sub = p.add_subparsers(dest='cmd')
-    # minimal commands to avoid importing heavy modules at startup
-    sub.add_parser('help', help='Show help')
-    return p
+from typing import Optional, Sequence
 
 
-def main(argv=None):
-    argv = argv or sys.argv[1:]
-    parser = _build_parser()
-    ns = parser.parse_args(argv)
-    if ns.version:
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    """Run the package main() function with optional argv.
+
+    Args:
+        argv: Optional list of arguments (if None, use existing sys.argv).
+
+    Returns:
+        Exit code (int) returned by package main(), or 0 on success.
+    """
+    # Defer import to avoid heavy module import at install time
+    try:
+        import tensorpack as _tp
+    except Exception as e:
+        print(f"Error importing tensorpack package: {e}", file=sys.stderr)
+        return 2
+
+    # If argv provided, set sys.argv accordingly
+    if argv is not None:
+        sys.argv[:] = list(argv)
+
+    # Call package-level main() if present
+    main_fn = getattr(_tp, 'main', None)
+    if callable(main_fn):
         try:
-            ver = m.version('tensorpack')
+            result = main_fn()
+            return int(result) if result is not None else 0
+        except SystemExit as se:
+            # Preserve explicit SystemExit codes
+            return int(se.code) if se.code is not None else 0
         except Exception:
-            ver = getattr(sys.modules.get('tensorpack'), '__version__', '0.0')
-        print(ver)
-        return 0
-    if ns.cmd == 'help' or not ns.cmd:
-        parser.print_help()
-        return 0
-    print(f"Unknown command: {ns.cmd}")
-    return 2
+            import traceback
+            traceback.print_exc()
+            return 1
+
+    # Fallback: try legacy CLI helper `run_cli` or offer guidance
+    alt = getattr(_tp, 'run_cli', None)
+    if callable(alt):
+        try:
+            alt()
+            return 0
+        except Exception:
+            return 1
+
+    print("tensorpack package does not expose a main() entry point.", file=sys.stderr)
+    return 3
 
 
 if __name__ == '__main__':
