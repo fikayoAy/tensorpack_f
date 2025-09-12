@@ -106,19 +106,30 @@ for g in selected_groups:
 # If numpy is installed in the build environment, add its include dirs so
 # C extensions can compile against numpy headers.
 add_numpy_include_dirs(extensions)
+add_numpy_include_dirs(extensions)
 
-if not extensions:
+# Allow building a pure-Python wheel for testing by setting SKIP_EXT=1 in the
+# environment. This is useful when compiled C sources are not available on
+# the build machine but we need to verify package layout and console scripts.
+skip_ext = os.environ.get('SKIP_EXT') == '1'
+
+if not extensions and not skip_ext:
     print("No extension modules found for the selected groups. Nothing to build.")
     sys.exit(0)
 
-if cythonize is not None:
-    ext_modules = cythonize(
-        extensions,
-        compiler_directives={"language_level": "3", "boundscheck": False, "wraparound": False},
-    )
+if skip_ext:
+    print("SKIP_EXT=1: skipping extension build and producing a pure-Python wheel")
+    ext_modules = []
 else:
-    # If Cython isn't available, setup() will try to compile from .c files if present.
-    ext_modules = extensions
+    if cythonize is not None:
+        ext_modules = cythonize(
+            extensions,
+            compiler_directives={"language_level": "3", "boundscheck": False, "wraparound": False},
+            build_dir=str(HERE / "build"),
+        )
+    else:
+        # If Cython isn't available, setup() will try to compile from .c files if present.
+        ext_modules = extensions
 
 setup(
     name="tensorpack",
@@ -128,7 +139,6 @@ setup(
     author_email="Ayodeleanjola4@gmail.com",
     url="https://github.com/fikayoAy/tensorpack",
     packages=["tensorpack"],
-    py_modules=["tensorpack"],
     ext_modules=ext_modules,
     entry_points={
         'console_scripts': [

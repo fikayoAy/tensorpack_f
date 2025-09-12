@@ -141,7 +141,7 @@ else:
 
 ## Demo videos
 
-- Entity search demo: `img/entity-search_compressed.mp4`
-- Semantic analysis demo: `img/sematic-analysis_compressed.mp4`
+- Entity search demo: `img/entity-search.mp4`
+- Semantic analysis demo: `img/sematic-analysis.mp4`
 
 

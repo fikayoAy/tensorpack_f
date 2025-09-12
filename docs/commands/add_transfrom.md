@@ -131,7 +131,7 @@ tensorpack add-transform \
 
 **Demo (short):**
 
-[Demo: add-transform walkthrough](../../add-transfrom1_compressed.mp4)
+[Demo: add-transform walkthrough](../../add-transfrom1.mp4)
 
 ---
 
