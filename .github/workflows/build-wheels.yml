@@ -36,7 +36,6 @@ jobs:
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.17.0
         with:
-          platform: ${{ matrix.platform }}
           output-dir: wheelhouse
         env:
           # Ensure numpy headers are available during extension builds
