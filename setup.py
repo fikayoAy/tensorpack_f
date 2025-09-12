@@ -81,8 +81,8 @@ PKG_INIT = PKG_DIR / "__init__.py"
 if not PKG_INIT.exists():
     PKG_INIT.write_text("")
 
-# Source directory is the same as HERE since .pyx files are in root
-TP_DIR = HERE
+# Source directory is the 'tensorpack' directory
+TP_DIR = HERE / "tensorpack"
 
 groups_map = discover_extensions(TP_DIR)
 
