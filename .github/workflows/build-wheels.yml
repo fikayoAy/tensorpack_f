@@ -34,7 +34,7 @@ jobs:
           python -m pip install --upgrade pip build wheel
 
       - name: Build wheels with cibuildwheel
-        uses: pypa/cibuildwheel@v2
+        uses: pypa/cibuildwheel@v2.17.0
         with:
           platform: ${{ matrix.platform }}
           output-dir: wheelhouse
