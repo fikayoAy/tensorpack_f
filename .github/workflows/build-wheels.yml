@@ -1,0 +1,84 @@
+name: Build wheels (cibuildwheel)
+
+on:
+  push:
+    branches: [ main ]
+    tags: ['v*']
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build-wheels:
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      matrix:
+        include:
+          - platform: linux
+            runs-on: ubuntu-latest
+          - platform: macos
+            runs-on: macos-latest
+          - platform: windows
+            runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python (for tooling)
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Upgrade pip and install build tools
+        run: |
+          python -m pip install --upgrade pip build wheel
+
+      - name: Build wheels with cibuildwheel
+        uses: pypa/cibuildwheel@v2
+        with:
+          platform: ${{ matrix.platform }}
+          output-dir: wheelhouse
+        env:
+          # Ensure numpy headers are available during extension builds
+          CIBW_BEFORE_BUILD: "pip install numpy"
+          # Build for supported Python versions (adjust if needed)
+          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-*"
+          # Skip PyPy builds by default
+          CIBW_SKIP: "pp*"
+
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.platform }}
+          path: wheelhouse/*.whl
+
+  publish-release:
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download Linux wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-linux
+          path: wheels/linux
+
+      - name: Download macOS wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-macos
+          path: wheels/macos
+
+      - name: Download Windows wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows
+          path: wheels/windows
+
+      - name: Create GitHub Release and upload wheels
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            wheels/**/*.whl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
