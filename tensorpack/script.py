@@ -21,8 +21,10 @@ import traceback
 import numpy as np
 import logging
 import time
-import re
 import datetime
+from . import matrixtransformer
+from .base_classes import BaseGraph, BaseTime
+from .graph import DynamicGraph
 from pathlib import Path
 import traceback
 from typing import Dict, Any, Optional, Tuple, List, Union, Callable, TypeVar, Type

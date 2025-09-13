@@ -1,5 +1,5 @@
 from pathlib import Path
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 import sys
 import os
 from typing import Union, Dict, List
@@ -138,7 +138,7 @@ setup(
     author="Fikayomi Ayodele",
     author_email="Ayodeleanjola4@gmail.com",
     url="https://github.com/fikayoAy/tensorpack",
-    packages=["tensorpack"],
+    packages=find_packages(),
     ext_modules=ext_modules,
     entry_points={
         'console_scripts': [
