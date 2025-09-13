@@ -246,7 +246,7 @@ def create_silent_sentence_transformer(model_name='all-MiniLM-L6-v2'):
 
 # Import helper functions for entity extraction and pathway analysis
 try:
-    from entity_extraction import _extract_key_entities_from_dataset
+    from .entity_extraction import _extract_key_entities_from_dataset
 except ImportError:
     # Fallback implementation
     def _extract_key_entities_from_dataset(dataset, metadata):
@@ -370,12 +370,12 @@ def get_application_path():
 
 sys.path.append(get_application_path())
 try:
-    from matrixtransformer import MatrixTransformer
+    from .matrixtransformer import MatrixTransformer
    
     # Use demo license manager (no license restrictions)
     
     # Uncomment the line below to restore license checks
-    from license_manager import LicenseManager
+    from .license_manager import LicenseManager
 except ImportError as e:
     print(f"Error: Required module not found - {e}. Please ensure it's installed correctly.")
     sys.exit(1)
@@ -5448,7 +5448,7 @@ def _cluster_with_semantic_analysis(matrices, filtered_connections, dataset_info
     np.fill_diagonal(distance_matrix, 0)
     
     # Use optimized cluster selection from MatrixTransformer
-    from matrixtransformer import MatrixTransformer
+    from .matrixtransformer import MatrixTransformer
     temp_transformer = MatrixTransformer()
     
     # Convert distance matrix to coordinate space for optimized selection
@@ -5618,7 +5618,7 @@ def traverse_graph_command(args) -> int:
         except Exception:
             pass
         
-        from matrixtransformer import MatrixTransformer
+        from .matrixtransformer import MatrixTransformer
         import json
         import time
         import glob

@@ -42,28 +42,28 @@ This explores semantic pathways and connections
 **General syntax:**
 
 ```bash
-python tensorpack.py traverse-graph --inputs <patterns...> [options]
+tensorpack traverse-graph --inputs <patterns...> [options]
 
 ```
 
 **Bridge discovery:**
 
 ```bash
-tensorpack.py traverse-graph --inputs "data/*.csv" --find-bridges --output bridges --export-formats all --visualize viz
+tensorpack traverse-graph --inputs "data/*.csv" --find-bridges --output bridges --export-formats all --visualize viz
 
 ```
 
 **Point-to-point pathway:**
 
 ```bash
-tensorpack.py traverse-graph --inputs a.csv b.csv --source-dataset a.csv  --target-dataset b.csv --output pathway_results
+tensorpack traverse-graph --inputs a.csv b.csv --source-dataset a.csv  --target-dataset b.csv --output pathway_results
 
 ```
 
 **Entity search:**
 
 ```bash
-tensorpack.py traverse-graph --inputs *.json --search-entity "BRCA1" --output brca_search --visualize brca_viz
+tensorpack traverse-graph --inputs *.json --search-entity "BRCA1" --output brca_search --visualize brca_viz
 
 ```
 

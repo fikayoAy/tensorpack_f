@@ -83,7 +83,7 @@ Click the thumbnail to open the demo video.
 
 Register a new custom Python transform (parquet handler)
 ```bash
-python tensorpack.py add-transform \
+tensorpack add-transform \
   --name parquet_handler \
   --data-type custom \
   --source-type python \
@@ -109,7 +109,7 @@ See the full registration reference: `docs/commands/add_transfrom.md`.
 
 List installed transforms of type `custom`
 ```bash
-python tensorpack.py list-transforms --data-type custom
+tensorpack list-transforms --data-type custom
 ```
 
 | Flag | Description |
@@ -118,7 +118,7 @@ python tensorpack.py list-transforms --data-type custom
 
 Use the registered transform while traversing and searching entities
 ```bash
-python tensorpack.py traverse-graph \
+tensorpack traverse-graph \
   --inputs genes.parquet \
   --search-entity "PPARG" \
   --include-metadata \

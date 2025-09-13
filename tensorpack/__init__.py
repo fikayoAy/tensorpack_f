@@ -1,64 +1,32 @@
 """tensorpack package initializer.
 
-Expose a small `main()` function so the CLI shim can call into the
-package. The real implementation may live in `tensorpack.script` (preferred),
-or as a top-level `script` module (legacy). This wrapper tries both and
-returns appropriate exit codes.
+Provide a package-level main() that delegates to the CLI shim or the compiled
+script extension. This ensures `import tensorpack; tensorpack.main()` and
+`python -m tensorpack` work after installation.
 """
-from __future__ import annotations
-import sys
-from typing import Optional
+from typing import Optional, Sequence
 
 
-def _find_main_callable():
-	# Try package-local script module first
+def main(argv: Optional[Sequence[str]] = None) -> int:
+	"""Package-level entry point.
+
+	Prefer a compiled `script.main` (extension) if present; otherwise fall
+	back to the lightweight `cli.main` shim.
+	"""
+	# Try compiled extension first (may be a .pyd/.so)
 	try:
 		from . import script as _script
 		main_fn = getattr(_script, 'main', None)
 		if callable(main_fn):
-			return main_fn
+			return int(main_fn(argv) if argv is not None else main_fn())
 	except Exception:
 		pass
 
-	# Try top-level legacy `script` module
+	# Fallback to the CLI shim
 	try:
-		import script as _script
-		main_fn = getattr(_script, 'main', None)
-		if callable(main_fn):
-			return main_fn
+		from .cli import main as _cli_main
+		return int(_cli_main(argv) if argv is not None else _cli_main())
 	except Exception:
 		pass
 
-	# No main found
-	return None
-
-
-def main(argv: Optional[list] = None) -> int:
-	"""Package-level entry point used by `tensorpack.cli`.
-
-	Args:
-		argv: Optional list of args; if provided, replaces `sys.argv`.
-
-	Returns:
-		Exit code (int).
-	"""
-	main_fn = _find_main_callable()
-	if main_fn is None:
-		print("tensorpack package does not expose a main() entry point.", file=sys.stderr)
-		return 3
-
-	if argv is not None:
-		sys.argv[:] = list(argv)
-
-	try:
-		result = main_fn()
-		return int(result) if result is not None else 0
-	except SystemExit as se:
-		return int(se.code) if se.code is not None else 0
-	except Exception:
-		import traceback
-		traceback.print_exc()
-		return 1
-
-
-__all__ = ["main"]
+	raise SystemExit("tensorpack package does not expose a main() entry point.")

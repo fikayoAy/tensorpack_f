@@ -5,7 +5,7 @@ This command reconstructs a **multi-dimensional tensor** from a saved matrix and
 ### General Syntax
 
 ```python
-python [tensorpack.py] matrix_to_tensor <input_matrix> --output <tensor_out> --metadata <meta_in.json> [--target-shape <dims>] [--target-dtype <dtype>] [--verify] [--error-threshold <float>] [--inspect] [--verbose] [--log <logfile>] [--export-format <fmt>]
+matrix_to_tensor <input_matrix> --output <tensor_out> --metadata <meta_in.json> [--target-shape <dims>] [--target-dtype <dtype>] [--verify] [--error-threshold <float>] [--inspect] [--verbose] [--log <logfile>] [--export-format <fmt>]
 ```
 
 ### **What it does**
@@ -68,8 +68,8 @@ python [tensorpack.py] matrix_to_tensor <input_matrix> --output <tensor_out> --m
 
 ### Quick try
 
-```python
-python tensorpack.py matrix_to_tensor sample_6d_matrix.csv --output restored_6d_tensor.json --metadata sample_6d_tensor_meta.json
+```bash
+tensorpack matrix_to_tensor sample_6d_matrix.csv --output restored_6d_tensor.json --metadata sample_6d_tensor_meta.json
 ```
 
 ---

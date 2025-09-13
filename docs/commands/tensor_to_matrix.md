@@ -4,8 +4,8 @@ This command takes a complex, multi-dimensional dataset (a **tensor**) and flatt
 
 ### General Syntax
 
-```python
-python tensorpack.py tensor_to_matrix <input> --output <matrix_out> --meta-file <meta_out.json> [--verbose] [--log <logfile>] [--export-format <fmt>]
+```bash
+tensorpack tensor_to_matrix <input> --output <matrix_out> --meta-file <meta_out.json> [--verbose] [--log <logfile>] [--export-format <fmt>]
 ```
 
 ### **What it does**
@@ -58,8 +58,8 @@ Here’s what you’ll get depending on the output format you request:
 
 ### Quick try
 
-```python
-python tensorpack.py tensor_to_matrix sample_6d_tensor.json --output sample_6d_matrix.csv --meta-file sample_6d_tensor_meta.json
+```bash
+tensorpack tensor_to_matrix sample_6d_tensor.json --output sample_6d_matrix.csv --meta-file sample_6d_tensor_meta.json
 ```
 
 ![tensor_to_matrix1](img/tensor_to_matrix1.png)

@@ -18,39 +18,42 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     Returns:
         Exit code (int) returned by package main(), or 0 on success.
     """
-    # Defer import to avoid heavy module import at install time
+    # Prefer the compiled `script` entrypoint (if present).
+    # Do not import the top-level package here to avoid import recursion
+    # when `tensorpack.main` delegates to this function.
     try:
-        import tensorpack as _tp
-    except Exception as e:
-        print(f"Error importing tensorpack package: {e}", file=sys.stderr)
-        return 2
+        from .script import main as _script_main
+    except Exception:
+        _script_main = None
 
-    # If argv provided, set sys.argv accordingly
-    if argv is not None:
-        sys.argv[:] = list(argv)
-
-    # Call package-level main() if present
-    main_fn = getattr(_tp, 'main', None)
-    if callable(main_fn):
+    # If argv provided, forward it to the script implementation where supported
+    if argv is not None and _script_main is not None:
         try:
-            result = main_fn()
-            return int(result) if result is not None else 0
+            return int(_script_main(argv))
         except SystemExit as se:
-            # Preserve explicit SystemExit codes
             return int(se.code) if se.code is not None else 0
         except Exception:
             import traceback
             traceback.print_exc()
             return 1
 
-    # Fallback: try legacy CLI helper `run_cli` or offer guidance
-    alt = getattr(_tp, 'run_cli', None)
-    if callable(alt):
+    if _script_main is not None:
         try:
-            alt()
-            return 0
+            return int(_script_main())
+        except SystemExit as se:
+            return int(se.code) if se.code is not None else 0
         except Exception:
+            import traceback
+            traceback.print_exc()
             return 1
+
+    # Fallback: try a legacy helper inside a module that doesn't import the package
+    try:
+        from . import run_cli as _run_cli
+        if hasattr(_run_cli, 'main'):
+            return int(_run_cli.main(argv) if argv is not None else _run_cli.main())
+    except Exception:
+        pass
 
     print("tensorpack package does not expose a main() entry point.", file=sys.stderr)
     return 3

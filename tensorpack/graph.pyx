@@ -16,7 +16,7 @@ import numpy as np
 from scipy.spatial.distance import euclidean, cosine
 from sklearn.cluster import KMeans
 from scipy.spatial import KDTree, distance
-from base_classes import BaseGraph
+from .base_classes import BaseGraph
 from joblib import Parallel, delayed
 from concurrent.futures import ThreadPoolExecutor
 from numba import jit, prange

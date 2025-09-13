@@ -44,7 +44,7 @@ Register a **custom transformation** or **entity matcher** into TensorPack’s u
 **General syntax:**
 
 ```bash
-python tensorpack.py add-transform --name <name> --data-type <type> \
+tensorpack add-transform --name <name> --data-type <type> \
   --source-type <python|executable|inline|config> --source <path_or_def> [options]
 
 ```

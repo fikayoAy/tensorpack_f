@@ -49,7 +49,7 @@ Produces a ranked network of relationships with optional clustering, visualizati
 **General syntax:**
 
 ```bash
-python tensorpack.py discover-connections --inputs <files...> --output <out.json> [options]
+tensorpack discover-connections --inputs <files...> --output <out.json> [options]
 
 ```
 

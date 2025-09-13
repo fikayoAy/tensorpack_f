@@ -1016,7 +1016,7 @@ class MatrixTransformer:
         """Initialize a continuous hypercube decision space with smooth transitions between matrix types."""
         # Wrap DynamicGraph import in try/except to handle mocked failures
         try:
-            from graph import DynamicGraph
+            from .graph import DynamicGraph
             self.hypercube_graph = DynamicGraph(directed=False)
         except Exception as e:
             # Create a minimal stand-in for DynamicGraph when it fails
@@ -6225,7 +6225,7 @@ class MatrixTransformer:
         use_dynamic_graph = False
         
         try:
-            from graph import DynamicGraph
+            from .graph import DynamicGraph
             graph = DynamicGraph(directed=True)
             use_dynamic_graph = True
         except (ImportError, Exception) as e:
