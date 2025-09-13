@@ -1,3 +1,54 @@
 [build-system]
 requires = ["setuptools>=42", "wheel", "cython"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "tensorpack"
+version = "0.0.0"
+description = "TensorPack - tools for tensor/matrix conversion and semantic connections"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [ { name="TensorPack Authors" } ]
+
+dependencies = [
+	"numpy",
+	"pandas",
+	"scikit-learn",
+	"scipy",
+	"matplotlib",
+	"seaborn",
+	"pillow",
+	"opencv-python-headless",
+	"pyarrow",
+	"h5py",
+	"netCDF4",
+	"tifffile",
+	"nibabel",
+	"zarr",
+	"requests",
+	"cryptography",
+	"paddleocr",
+	"numba",
+	"joblib",
+	"networkx",
+	"tqdm",
+	"openpyxl",
+	"xlwt",
+	"torch",
+	"transformers",
+	"jsonschema",
+	"sqlalchemy",
+	"psutil",
+	"python-dateutil",
+	"pandas-flavor",
+	"pyyaml",
+	"lxml",
+	"scikit-image",
+	"fastparquet",
+	"regex",
+	"fonttools",
+	"Flask",
+]
+
+[project.scripts]
+tensorpack = "tensorpack.cli:main"

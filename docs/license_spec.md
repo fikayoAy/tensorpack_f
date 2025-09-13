@@ -1,115 +1,101 @@
-License JSON spec and vendor signing checklist
+- Local cache: license state is persisted under `~/.tensorpack/license/license_data.json` and usage under `~/.tensorpack/license/usage_data.json`. Local per-key license files are stored as `~/.tensorpack/license/<license_key>.json`.
+- Activation flow: `LicenseManager.activate_license()` tries (in order):
+  1. Offline signature verification of a local signed license file (if `cryptography` is available).
+  2. Online verification against Cryptolens (HTTP API).
+  3. If the key corresponds to a local signed file, it can accept that as a fallback when online checks fail.
+- What activation does: on successful verification the manager updates `self._license_data` (license key, type, features, expiry, `activated` flag) and calls `_save_license_data()` — which overwrites `license_data.json`.
+- Trial generation: `generate_license()` can create local trial/academic license files; trials are recorded with `license_type='trial'` and an `expires` timestamp.
+- Verification: `verify_license()` prefers online Cryptolens check, then offline verification, and finally the cached activation data (`activated` flag) as a last fallback.
 
-Purpose
+Conclusion
 
-This document defines a canonical JSON license format, the canonicalization rules for signing, recommended signing algorithms, and a short vendor checklist for issuing signed licenses the app can verify offline.
+when a new paid license key is successfully activated, it replaces/overwrites the prior cached license state locally. The repository stores the new license details into the same `license_data.json`, so a paid license will supersede a trial on the machine where activation succeeds.
 
-1. Canonical license JSON schema (recommended fields)
+Important caveats and edge cases
 
-- license_id: string (unique, e.g. UUID or JTI)
-- product_id: string (e.g. "tensorpack-premium")
-- customer_id: string (email or account id)
-- license_type: string ("free", "trial", "academic", "premium")
-- issued_at: string (ISO8601 UTC)
-- expires_at: string or null (ISO8601 UTC)
-- machine_fingerprint: string or null (vendor-bound fingerprint/hash)
-- features: object (map of entitlement keys -> values)
-- offline_grace_days: integer (optional, days allowed offline after expiry)
-- version: integer (schema version)
-- meta: object (optional vendor metadata)
-- jti: string (unique token id for revocation lookups)
+- Server-side constraints: If the licensing server (Cryptolens) enforces activation/usage limits per key or per-machine, the server may refuse activation. In that case activation will fail and the trial remains in place.
+- Offline signed-license verification requires the `cryptography` package; without it the manager relies on online Cryptolens or a plain local license file.
+- If a user has multiple cached local license files, `activate_license()` prefers verifying the key via Cryptolens first; a local `<key>.json` can be used if online verification fails.
+- Usage counters (`usage_data.json`) are separate and are not necessarily reset on activation; activation updates features but may leave usage history intact.
 
-Wrapper for signature:
-- payload: the canonical JSON object (above)
-- signature: base64-encoded signature bytes
-- sig_alg: string (e.g. "RS256" or "Ed25519")
-- key_id: optional string (public key identifier)
+Practical step-by-step upgrade & verification (copyable)
 
-2. Canonicalization rules (must be identical for signer and verifier)
+1) Inspect existing license files and cached state
 
-- Encode payload as UTF-8.
-- Serialize the payload JSON with keys sorted (lexicographic).
-- Use no extra whitespace (most JSON serializers with sort_keys=True produce deterministic output).
-- Use ISO8601 UTC for datetimes with trailing Z (e.g. 2025-09-09T17:00:00Z).
-- Numbers should be plain JSON numbers (avoid locale formatting).
-- Do not include transient fields (e.g. last-verification timestamps) inside signed payload.
+```powershell
+Get-ChildItem $env:USERPROFILE\\.tensorpack\\license\\* -ErrorAction SilentlyContinue
+Get-Content $env:USERPROFILE\\.tensorpack\\license\\license_data.json -Raw | ConvertFrom-Json
+```
 
-3. Recommended signing algorithms
+2) Activate the new license key (preferred)
 
-- Ed25519: compact, fast, and safe; preferred if available.
-- RSA-PSS with SHA-256 (RSASSA-PSS): widely supported; use key sizes >= 2048.
-- Provide key_id in the wrapper to allow key rotation.
+- If the `tensorpack` console script works:
 
-4. Vendor signing checklist
+```powershell
+tensorpack --activate-license YOUR-KEY
+```
 
-- Generate key pair offline and protect the private key.
-  - Ed25519: use libsodium or openssh-keygen workflows.
-  - RSA: use openssl to generate RSA key (2048/3072+).
-- Compose the payload JSON following the schema.
-- Serialize with canonical rules (sorted keys, UTF-8).
-- Sign the serialized bytes with the vendor private key.
-- Produce a license file containing {"payload": <object>, "signature": "<b64>", "sig_alg": "Ed25519", "key_id": "v1"}
-- Deliver the license file to the customer by secure channel.
-- Record jti and customer mapping in vendor DB for revocation.
+- If `tensorpack` console script is not available, run the module or call the manager from Python:
 
-5. App verification checklist (what the app must do)
+```powershell
+# via module entry (recommended when installed)
+python -m tensorpack --activate-license YOUR-KEY
 
-- Load license file and extract payload, signature, sig_alg, key_id.
-- Re-serialize payload using the canonical rules and verify signature with the public key matching key_id.
-- Check payload.product_id matches expected product.
-- Check time validity: issued_at <= now <= expires_at (or within offline_grace_days if offline policy allows).
-- If machine_fingerprint present, verify match (allow documented fallback behavior).
-- Check jti against revocation store (if online) or keep a short-lived revocation cache updated periodically.
-- On success, cache the verified license metadata and last-verified timestamp.
+# direct Python call (works in development without installing console script)
+python -c "from tensorpack.license_manager import LicenseManager; lm=LicenseManager(); print(lm.activate_license('YOUR-KEY'))"
+```
 
-6. Revocation and refresh policy
+3) Verify license status after activation
 
-- Issue short expiries (e.g. 7 days) for offline tokens and require online refresh periodically.
-- Keep a server-side revocation list keyed by jti; the app should refresh revocation cache on periodic online checks.
-- Allow an offline grace (e.g. 48–72 hours) after expiry to accommodate disconnected use; after grace expires, downgrade to free.
+```powershell
+tensorpack --license-info
+# or
+python -m tensorpack --license-info
+```
 
-7. Machine fingerprint suggestions
+4) Offline fallback using a signed license file
 
-- Prefer hardware-backed attestation (TPM) when available.
-- Fallback: hash of (hostname + primary MAC + stable machine-id); document how to compute so signer and verifier agree.
-- Avoid fragile identifiers like IP addresses.
+If the vendor provided a signed license file, place it at:
 
-8. File layout and example (illustrative)
+```
+%USERPROFILE%\\.tensorpack\\license\\<LICENSE_KEY>.json
+```
 
+Then run the same `--activate-license <LICENSE_KEY>` command; the manager will attempt offline verification using that file.
+
+5) If activation fails (common causes and fixes)
+
+- Server rejects activation (activation limits, revoked key): contact vendor support with your new key and machine/account details so they can revoke previous trial activations or adjust limits.
+- Missing `cryptography` for offline verification: install it in your venv:
+
+```powershell
+pip install cryptography requests
+```
+
+- `tensorpack` console script fails locally: install the package into your venv from the repo root:
+
+```powershell
+python -m pip install -e .
+```
+
+What changes on disk when activation succeeds
+
+- `~/.tensorpack/license/license_data.json` will be updated with fields similar to:
+
+```json
 {
-  "payload": {
-    "license_id": "b4f6d1a2-...",
-    "product_id": "tensorpack-premium",
-    "customer_id": "alice@example.com",
-    "license_type": "premium",
-    "issued_at": "2025-09-01T12:00:00Z",
-    "expires_at": "2025-09-08T12:00:00Z",
-    "machine_fingerprint": "sha256:...",
-    "features": {"max_datasets": "inf"},
-    "offline_grace_days": 2,
-    "version": 1,
-    "jti": "jti-12345"
-  },
-  "signature": "<base64-signature>",
-  "sig_alg": "Ed25519",
-  "key_id": "v1"
+  "license_key": "YOUR-KEY",
+  "license_type": "premium",
+  "activated": true,
+  "expires": "2026-09-01T12:00:00Z",
+  "features": { /* premium entitlements */ },
+  "activation_date": "2025-09-13T...Z"
 }
+```
 
-9. Key rotation
+When to contact the vendor / escalation
 
-- Support multiple public keys in the app; key_id lets the app pick the correct public key.
-- When rotating, sign new licenses with new key_id and keep old public keys for verification until all active licenses expire.
+- Activation rejected due to server-side limits or revocation: contact vendor support with the new key, purchase/order details, and machine identifier so they can resolve activations or issue a replacement.
+- If offline activation fails and you have a signed license file, provide that file to support and ask for instructions or a reissued signed license.
 
-10. Minimal vendor API (optional)
 
-- POST /activate {license_key} -> returns signed license payload or error.
-- GET /revoked?jti=... -> returns revoked boolean.
-- Provide TLS and authenticated access for vendor portal.
-
-Next steps I can take for you
-
-- Implement the app-side verification changes in `license_manager.py` so local license files are accepted only when signature verifies (requires `cryptography` or equivalent in container).
-- Produce a tiny signing script for the vendor (example commands) to create signed files.
-- Create a minimal mock activation endpoint (Flask) for local testing.
-
-Tell me which one to do next and I'll implement it.
