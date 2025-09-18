@@ -218,8 +218,7 @@ Use `--export-formats all` to export in all available formats, or specify indivi
 Install from PyPI:
 
 ```bash
-python -m pip install tensorpack-f==0.1.0
-```
+python -m pip install tensorpack-f==0.1.2`
 
 ## Return Structure Documentation
 
