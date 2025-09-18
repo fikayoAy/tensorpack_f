@@ -1,55 +1,34 @@
 from pathlib import Path
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, find_packages
 import sys
 import os
 from typing import Union, Dict, List
 
-try:
-    from Cython.Build import cythonize
-except Exception:  # pragma: no cover - runtime fallback
-    cythonize = None
+# No Cython imports - using pure Python
 
-
-def discover_extensions(package_dir: Path) -> Dict[str, List[Extension]]:
-    """Discover .pyx files and group them.
-
-    Returns a mapping of group name -> list[Extension]. By default we classify
-    anything named `license_manager` into the `license` group, and everything
-    else into `core`.
+def discover_python_modules(package_dir: Path) -> List[str]:
+    """Discover .py files.
+    
+    Returns a list of Python module files to include.
     """
-    groups: Dict[str, List[Extension]] = {"core": [], "license": []}
-    pyx_files = sorted(package_dir.glob("*.pyx"))
-    for p in pyx_files:
-        # Construct a stable package module name. Use the package folder
-        # `tensorpack` as the top-level package so Cython receives a valid
-        # module name (avoids cases where package_dir.name could be '.' or
-        # otherwise produce a leading dot).
-        mod_name = f"tensorpack.{p.stem}"
-        ext = Extension(mod_name, [str(p)])
-        if p.stem == "license_manager":
-            groups.setdefault("license", []).append(ext)
-        else:
-            groups.setdefault("core", []).append(ext)
-    return groups
+    modules = []
+    py_files = sorted(package_dir.glob("*.py"))
+    for p in py_files:
+        if p.stem != "__init__":  # Skip __init__.py
+            modules.append(p.stem)
+    return modules
 
 
-def add_numpy_include_dirs(ext_list: List[Extension]):
-    """If numpy is available, append its include dirs to Extension objects.
+# Remove the numpy include dirs function since we're not using extensions
+# Replace with a function to find Python packages
 
-    This is executed at import time during CI where numpy gets installed
-    before running the build step. If numpy is not importable, this is a no-op.
-    """
-    try:
-        import numpy
-        inc = numpy.get_include()
-    except Exception:
-        return
-    for e in ext_list:
-        # ensure include_dirs exists and append numpy include
-        if getattr(e, 'include_dirs', None) is None:
-            e.include_dirs = [inc]
-        else:
-            e.include_dirs.append(inc)
+def find_python_packages(package_dir: Path) -> List[str]:
+    """Find all Python packages (directories with __init__.py)."""
+    packages = []
+    for p in package_dir.glob("**/__init__.py"):
+        pkg_path = p.parent.relative_to(package_dir.parent)
+        packages.append(str(pkg_path).replace('\\', '.').replace('/', '.'))
+    return packages
 
 
 def parse_groups_arg(argv: List[str]) -> Union[List[str], None]:
@@ -74,75 +53,44 @@ def parse_groups_arg(argv: List[str]) -> Union[List[str], None]:
 
 HERE = Path(__file__).parent
 
-# Create package directory if it doesn't exist
-PKG_DIR = HERE / "tensorpack"
-PKG_DIR.mkdir(exist_ok=True)
-PKG_INIT = PKG_DIR / "__init__.py"
-if not PKG_INIT.exists():
-    PKG_INIT.write_text("")
-
-# Source directory is the 'tensorpack' directory
-TP_DIR = HERE / "tensorpack"
-
-groups_map = discover_extensions(TP_DIR)
-
-# Determine which groups to build: None -> all
-requested = parse_groups_arg(sys.argv)
-if requested is None:
-    selected_groups = list(groups_map.keys())
+# Determine where the runtime modules live.
+# Some checkouts place the runtime .py files directly in the project root;
+# others place them inside a `tensorpack/` subdirectory. Detect both layouts
+# and configure setuptools `packages` and `package_dir` accordingly.
+SUBDIR = HERE / "tensorpack"
+if SUBDIR.exists() and any(p.suffix == '.py' for p in SUBDIR.glob('*.py')):
+    # Standard layout: `tensorpack/` contains the modules
+    TP_DIR = SUBDIR
+    packages = find_packages(where=str(HERE)) or ["tensorpack"]
+    package_dir = None
 else:
-    # validate groups
-    invalid = [g for g in requested if g not in groups_map]
-    if invalid:
-        print(f"Invalid group(s): {invalid}. Available: {list(groups_map.keys())}")
-        sys.exit(1)
-    selected_groups = requested
+    # Flat layout: runtime modules are in the project root. Map the package
+    # name `tensorpack` to the project root so files are packaged under that
+    # package name.
+    TP_DIR = HERE
+    packages = ["tensorpack"]
+    package_dir = {"tensorpack": str(HERE)}
 
-# Flatten selected extensions
-extensions = []
-for g in selected_groups:
-    extensions.extend(groups_map.get(g, []))
+# Get Python modules for debug output
+python_modules = discover_python_modules(TP_DIR)
+print(f"Found Python modules: {python_modules} (source dir: {TP_DIR})")
 
-# If numpy is installed in the build environment, add its include dirs so
-# C extensions can compile against numpy headers.
-add_numpy_include_dirs(extensions)
-add_numpy_include_dirs(extensions)
-
-# Allow building a pure-Python wheel for testing by setting SKIP_EXT=1 in the
-# environment. This is useful when compiled C sources are not available on
-# the build machine but we need to verify package layout and console scripts.
-skip_ext = os.environ.get('SKIP_EXT') == '1'
-
-if not extensions and not skip_ext:
-    print("No extension modules found for the selected groups. Nothing to build.")
-    sys.exit(0)
-
-if skip_ext:
-    print("SKIP_EXT=1: skipping extension build and producing a pure-Python wheel")
-    ext_modules = []
-else:
-    if cythonize is not None:
-        ext_modules = cythonize(
-            extensions,
-            compiler_directives={"language_level": "3", "boundscheck": False, "wraparound": False},
-            build_dir=str(HERE / "build"),
-        )
-    else:
-        # If Cython isn't available, setup() will try to compile from .c files if present.
-        ext_modules = extensions
-
+# No extensions, pure Python only
 setup(
-    name="tensorpack",
-    version="0.1",
-    description="Tensorpack project - compiled extensions",
+    name="tensorpack-f",
+    version="0.1.1",
+    description="TensorPack project - pure Python implementation",
     author="Fikayomi Ayodele",
     author_email="Ayodeleanjola4@gmail.com",
     url="https://github.com/fikayoAy/tensorpack",
-    packages=find_packages(),
-    ext_modules=ext_modules,
+    packages=packages,
+    package_dir=package_dir if package_dir is not None else None,
+    package_data={
+        "tensorpack": ["*.py", "*.json", "*.md"],
+    },
     entry_points={
         'console_scripts': [
-            'tensorpack=tensorpack.cli:main',
+            'tensorpack=tensorpack.script:main',
         ],
     },
     install_requires=[
@@ -151,6 +99,39 @@ setup(
         "scipy>=1.6.0",
         "torch>=1.8.0",
         "scikit-learn>=0.24.0",
+        "matplotlib>=3.3.0",
+        "seaborn>=0.11.0",
+        "pillow>=8.0.0",
+        "opencv-python-headless>=4.5.0",
+        "pyarrow>=5.0.0",
+        "h5py>=3.1.0",
+        "netCDF4>=1.5.6",
+        "tifffile>=2021.4.8",
+        "nibabel>=3.2.1",
+        "zarr>=2.8.0",
+        "requests>=2.25.0",
+        "cryptography>=3.4.0",
+        "paddleocr>=2.0.0",
+        "numba>=0.53.0",
+        "joblib>=1.0.0",
+        "networkx>=2.5.0",
+        "tqdm>=4.60.0",
+        "openpyxl>=3.0.0",
+        "xlwt>=1.3.0",
+        "transformers>=4.5.0",
+        "jsonschema>=3.2.0",
+        "sqlalchemy>=1.4.0",
+        "psutil>=5.8.0",
+        "python-dateutil>=2.8.1",
+        "pandas-flavor>=0.2.0",
+        "pyyaml>=5.4.0",
+        "lxml>=4.6.0",
+        "scikit-image>=0.18.0",
+        "fastparquet>=0.7.0",
+        "regex>=2021.4.4",
+        "fonttools>=4.22.0",
+        "Flask>=2.0.0",
+        "rich>=13.0.0",
     ],
     python_requires=">=3.8",
     classifiers=[

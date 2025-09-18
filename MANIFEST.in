@@ -1,0 +1,20 @@
+include LICENSE
+include README.md
+include pyproject.toml
+include setup.py
+
+# Only include the runtime modules required to run the package
+include tensorpack/__init__.py
+include tensorpack/__main__.py
+include tensorpack/_decode_text_from_dataset.py
+include tensorpack/base_classes.py
+include tensorpack/base.py
+include tensorpack/cli.py
+include tensorpack/convertto.py
+include tensorpack/entity_extraction.py
+include tensorpack/graph.py
+include tensorpack/license_manager.py
+include tensorpack/load_json_files.py
+include tensorpack/matrixtransformer.py
+include tensorpack/ocr_integration.py
+include tensorpack/script.py

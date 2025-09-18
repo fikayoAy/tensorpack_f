@@ -208,11 +208,25 @@ Each command supports various export formats:
 - `html`: Interactive visualizations
 - `parquet`: Columnar storage format
 - `sqlite`: Relational database
-- `pdf`: Publication-ready reports
 - `png`: Static visualizations
 - `markdown`: Documentation format
 
 Use `--export-formats all` to export in all available formats, or specify individual formats with comma-separated values.
+
+## Installation
+
+Install from PyPI:
+
+```bash
+python -m pip install tensorpack-f==0.1.0
+```
+
+## Return Structure Documentation
+
+These documents explain the data structures returned by key TensorPack commands:
+
+- [Discover Connections Command](docs/dc_return-structure.md) - Explains the return structure of the `discover_connections_command`, which finds relationships between datasets.
+- [Traverse Graph Command](docs/tg_return_structure.md) - Details the return structure of the `traverse_graph_command`, which explores connections between entities through different traversal modes.
 
 ## Command reference
 
