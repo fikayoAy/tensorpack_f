@@ -232,13 +232,13 @@ These documents explain the data structures returned by key TensorPack commands:
 
 Detailed command documentation is available in the `docs/commands` folder. See the following markdown files for usage, flags, and examples for each command:
 
-- `docs/commands/add_transfrom.md` — Add and manage custom transforms (register loaders, transformers and exporters).
-- `docs/commands/discover_connection.md` — Discover semantic and contextual connections between datasets.
-- `docs/commands/matrix_to_tensor.md` — Convert matrices back into tensor representations with metadata preservation.
-- `docs/commands/tensor_to_matrix.md` — Convert tensors into matrices with optional normalization and metadata extraction.
-- `docs/commands/traverse_graph.md` — Traverse dataset graphs, search entities and find pathways across inputs.
+- [Add Transform](docs/commands/add_transfrom.md) — Add and manage custom transforms (register loaders, transformers and exporters).
+- [Discover Connection](docs/commands/discover_connection.md) — Discover semantic and contextual connections between datasets.
+- [Matrix to Tensor](docs/commands/matrix_to_tensor.md) — Convert matrices back into tensor representations with metadata preservation.
+- [Tensor to Matrix](docs/commands/tensor_to_matrix.md) — Convert tensors into matrices with optional normalization and metadata extraction.
+- [Traverse Graph](docs/commands/traverse_graph.md) — Traverse dataset graphs, search entities and find pathways across inputs.
 
-There are also example media and additional notes in `docs/commands/img/` and sample datasets in `docs/commands/sample_data/` to help you get started.
+There are also example media and additional notes in the [img directory](docs/commands/img/) and sample datasets in the [sample_data directory](docs/commands/sample_data/) to help you get started.
 
 
 
