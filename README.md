@@ -6,6 +6,24 @@ _A compact CLI toolkit to convert, analyze and discover relationships across dat
 
 TensorPack is a software product with a command-line interface (CLI) that helps convert and analyze data between different formats. It focuses on converting tensors (multi-dimensional arrays) to matrices (2D arrays) and vice versa, and it also helps discover and understand connections between different datasets.
 
+## Table of Contents
+
+- [Pain Point Analysis](#pain-point-analysis)
+  - [Core Problem](#core-problem)
+  - [How TensorPack Helps](#how-tensorpack-helps)
+  - [Benefits](#benefits)
+- [How It Works](#how-it-works)
+  - [1. Adding Custom Transformations](#1-adding-custom-transformations)
+  - [2. Entity Search & Analysis](#2-entity-search--analysis)
+  - [3. Semantic Connection Discovery](#3-semantic-connection-discovery)
+  - [4. Semantic Analysis](#4-semantic-analysis)
+- [License](#license)
+  - [License Types](#license-types)
+  - [Machine Binding](#machine-binding)
+- [Installation](#installation)
+- [Return Structure Documentation](#return-structure-documentation)
+- [Command Reference](#command-reference)
+
 ## Pain Point Analysis
 
 _High-level problems TensorPack aims to solve._

@@ -2,6 +2,18 @@
 
 This document explains what happens when you run the graph traversal tool and what information it gives you back. We've written this guide to help both technical and non-technical readers understand the valuable insights this tool provides.
 
+## Table of Contents
+- [What This Tool Does](#what-this-tool-does)
+- [Common Information in All Modes](#common-information-in-all-modes)
+- [Direct Exploration Results](#direct-exploration-results)
+- [Semantic Bridge Results](#semantic-bridge-results)
+- [Entity Search Results](#entity-search-results)
+- [Path Metrics](#path-metrics)
+- [Visualization Options](#visualization-options)
+- [Data Export Options](#data-export-options)
+- [Full JSON Format Reference](#full-json-format-reference)
+- [Examples of Using the Results](#examples-of-using-the-results)
+
 ## What This Tool Does
 
 The graph traversal tool helps you explore connections between your datasets in different ways. Think of it as an explorer that can:

@@ -4,9 +4,14 @@ It finds semantic, mathematical, and entity-based links **between multiple datas
 
 Produces a ranked network of relationships with optional clustering, visualizations, and multi-format exports.
 
----
-
----
+## Table of Contents
+- [What it does](#what-it-does)
+- [Command-line arguments](#command-line-arguments)
+- [Return value](#return-value)
+- [Examples](#examples)
+- [Connection types](#connection-types)
+- [Visualization options](#visualization-options)
+- [Export formats](#export-formats)
 
 ## What it does
 

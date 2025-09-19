@@ -2,6 +2,18 @@
 
 This document explains what happens when you run the data connection discovery tool and what information it gives you back. We've written this guide to help both technical and non-technical readers understand the valuable insights this tool provides.
 
+## Table of Contents
+- [What This Tool Does](#what-this-tool-does)
+- [1. Basic Information About Your Analysis](#1-basic-information-about-your-analysis)
+- [2. Datasets You Provided](#2-datasets-you-provided)
+- [3. Connections Discovered](#3-connections-discovered)
+- [4. Entity Matches](#4-entity-matches)
+- [5. Semantic Analysis](#5-semantic-analysis)
+- [6. Clustering Information](#6-clustering-information)
+- [7. Summary Statistics](#7-summary-statistics)
+- [Full JSON Format Reference](#full-json-format-reference)
+- [Examples of Using the Results](#examples-of-using-the-results)
+
 ## What This Tool Does
 
 The connection discovery tool examines your datasets and finds relationships between them - whether they contain similar information, share common elements, or could work well together. Think of it as a smart assistant that looks through your files and tells you: "These two spreadsheets have customer information that overlaps" or "These datasets would cluster nicely into three groups."
