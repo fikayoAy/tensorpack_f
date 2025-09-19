@@ -78,7 +78,7 @@ print(f"Found Python modules: {python_modules} (source dir: {TP_DIR})")
 # No extensions, pure Python only
 setup(
     name="tensorpack-f",
-    version="0.1.1",
+    version="0.1.3",
     description="TensorPack project - pure Python implementation",
     author="Fikayomi Ayodele",
     author_email="Ayodeleanjola4@gmail.com",

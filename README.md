@@ -221,12 +221,25 @@ To use TensorPack, a license is required. Please request one by filling out the 
 
 Click the Google Forms logo above to open the License Request Form.
 
+### License Types
+
+TensorPack offers several license tiers:
+
+- **Free**: Basic functionality with limited usage. Machine-bound to prevent abuse.
+- **Trial**: Full functionality for 7 days.
+- **Academic**: Full functionality for academic users (automatically detected via email domain).
+- **Premium**: Full functionality with no limitations.
+
+### Machine Binding
+
+Free licenses are bound to the machine they are activated on. This prevents license abuse while still allowing legitimate free tier usage. If you need to use TensorPack on multiple machines, consider upgrading to a premium license.
+
 ## Installation
 
 Install from PyPI:
 
 ```bash
-python -m pip install tensorpack-f==0.1.2
+python -m pip install tensorpack-f==0.1.3
 ```
 
 ## Return Structure Documentation
