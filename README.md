@@ -213,6 +213,14 @@ Each command supports various export formats:
 
 Use `--export-formats all` to export in all available formats, or specify individual formats with comma-separated values.
 
+## License
+
+To use TensorPack, a license is required. Please request one by filling out the form below.
+
+[![Request a License](https://ssl.gstatic.com/docs/forms/device_home/images/forms_logo_lockup_2x.png)](https://docs.google.com/forms/d/e/1FAIpQLSe99mLhzKhcGwM8gvmw4Bf-Z5j0FMBmDHuUavN06mSZ55LgiA/viewform?usp=sharing&ouid=113684697499334755912)
+
+Click the logo above to open the License Request Form.
+
 ## Installation
 
 Install from PyPI:
