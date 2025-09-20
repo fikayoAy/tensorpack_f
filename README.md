@@ -6,6 +6,8 @@ _A compact CLI toolkit to convert, analyze and discover relationships across dat
 
 TensorPack is a software product with a command-line interface (CLI) that helps convert and analyze data between different formats. It focuses on converting tensors (multi-dimensional arrays) to matrices (2D arrays) and vice versa, and it also helps discover and understand connections between different datasets.
 
+TensorPack builds upon the foundation of [MatrixTransformer](https://github.com/fikayoAy/MatrixTransformer), providing a higher-level interface and additional features for data analysis and transformation. While MatrixTransformer offers core matrix manipulation capabilities, TensorPack extends these with comprehensive CLI tools, semantic analysis, relationship discovery, and visualization features for complex data workflows.
+
 ## Table of Contents
 
 - [Pain Point Analysis](#pain-point-analysis)
