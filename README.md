@@ -244,7 +244,7 @@ Click the Google Forms logo above to open the License Request Form.
 TensorPack offers several license tiers:
 
 - **Free**: Basic functionality with limited usage. Machine-bound to prevent abuse.
-- **Trial**: Full functionality for 7 days.
+- **Trial**: Full functionality for 14 days.
 - **Academic**: Full functionality for academic users (automatically detected via email domain).
 - **Premium**: Full functionality with no limitations.
 
