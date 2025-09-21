@@ -2,15 +2,6 @@
 
 This command reconstructs a **multi-dimensional tensor** from a saved matrix and its metadata. It guarantees that the original structure, shape, and meaning of the data can be restored.
 
-## Table of Contents
-- [General Syntax](#general-syntax)
-- [What it does](#what-it-does)
-- [Command-line arguments](#command-line-arguments)
-- [Return value](#return-value)
-- [Examples](#examples)
-- [Reconstruction quality](#reconstruction-quality)
-- [Output formats](#output-formats)
-
 ### General Syntax
 
 ```python

@@ -2,16 +2,6 @@
 
 This command takes a complex, multi-dimensional dataset (a **tensor**) and flattens it into a simpler, 2D **matrix** that is easier to analyze and work with. At the same time, it saves extra information (metadata) so the original tensor can be **reconstructed later without losing anything important**.
 
-## Table of Contents
-- [General Syntax](#general-syntax)
-- [What it does](#what-it-does)
-- [Why it matters](#why-it-matters)
-- [Command-line arguments](#command-line-arguments)
-- [Return value](#return-value)
-- [Examples](#examples)
-- [Supported input formats](#supported-input-formats)
-- [Export formats](#export-formats)
-
 ### General Syntax
 
 ```bash

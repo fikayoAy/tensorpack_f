@@ -3,15 +3,6 @@ This explores semantic pathways and connections
 
 **between datasets** (matrices, JSON, images, video, text, etc.). Supports point-to-point traversal, bridge discovery, and entity search — with outputs for further network analysis and visualization.
 
-## Table of Contents
-- [What it does](#what-it-does)
-- [Command-line arguments](#command-line-arguments)
-- [Return value](#return-value)
-- [Examples](#examples)
-- [Traversal modes](#traversal-modes)
-- [Output options](#output-options)
-- [Visualization formats](#visualization-formats)
-
 ## What it does
 
 1. Configures OCR heuristics, logging, and license checks.

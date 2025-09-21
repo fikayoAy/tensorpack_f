@@ -1,20 +1,5 @@
 # add_transform_command
 
-Register a **custom transformation** or **entity matcher** into TensorPack's user transform registry so it can be applied automatically during data loading and processing.
-
-## Table of Contents
-- [What it does](#what-it-does)
-- [Saving behavior & output location](#saving-behavior--output-location)
-- [Command-line arguments](#command-line-arguments)
-- [Return value](#return-value)
-- [Examples](#examples)
-- [Source types](#source-types)
-- [Creating Python transforms](#creating-python-transforms)
-- [Defining transform properties](#defining-transform-properties)
-- [Declaring neighbors](#declaring-neighbors)
-
-## What it does_transform_command
-
 Register a **custom transformation** or **entity matcher** into TensorPack’s user transform registry so it can be applied automatically during data loading and processing.
 
 ## What it does

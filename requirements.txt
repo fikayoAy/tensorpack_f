@@ -36,3 +36,4 @@ regex
 fonttools
 Flask
 rich
+PyJWT

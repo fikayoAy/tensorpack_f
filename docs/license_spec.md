@@ -1,20 +1,4 @@
-# TensorPack License Management Specification
-
-## Table of Contents
-- [License Storage](#license-storage)
-- [Activation Process](#activation-process)
-- [License Types](#license-types)
-- [Verification Methods](#verification-methods)
-- [Machine Binding](#machine-binding)
-- [Edge Cases and Caveats](#edge-cases-and-caveats)
-- [API Reference](#api-reference)
-
-## License Storage
-
 - Local cache: license state is persisted under `~/.tensorpack/license/license_data.json` and usage under `~/.tensorpack/license/usage_data.json`. Local per-key license files are stored as `~/.tensorpack/license/<license_key>.json`.
-
-## Activation Process
-
 - Activation flow: `LicenseManager.activate_license()` tries (in order):
   1. Offline signature verification of a local signed license file (if `cryptography` is available).
   2. Online verification against Cryptolens (HTTP API).
@@ -23,20 +7,16 @@
 - Trial generation: `generate_license()` can create local trial/academic license files; trials are recorded with `license_type='trial'` and an `expires` timestamp.
 - Verification: `verify_license()` prefers online Cryptolens check, then offline verification, and finally the cached activation data (`activated` flag) as a last fallback.
 
-## Machine Binding
+Conclusion
 
-Free licenses are now bound to the machine they are generated on to prevent abuse. The machine ID is calculated using hardware identifiers and stored with the license. During verification, the current machine ID is compared to the stored one.
+when a new paid license key is successfully activated, it replaces/overwrites the prior cached license state locally. The repository stores the new license details into the same `license_data.json`, so a paid license will supersede a trial on the machine where activation succeeds.
 
-## Edge Cases and Caveats
+Important caveats and edge cases
 
 - Server-side constraints: If the licensing server (Cryptolens) enforces activation/usage limits per key or per-machine, the server may refuse activation. In that case activation will fail and the trial remains in place.
 - Offline signed-license verification requires the `cryptography` package; without it the manager relies on online Cryptolens or a plain local license file.
 - If a user has multiple cached local license files, `activate_license()` prefers verifying the key via Cryptolens first; a local `<key>.json` can be used if online verification fails.
 - Usage counters (`usage_data.json`) are separate and are not necessarily reset on activation; activation updates features but may leave usage history intact.
-
-## Conclusion
-
-When a new paid license key is successfully activated, it replaces/overwrites the prior cached license state locally. The repository stores the new license details into the same `license_data.json`, so a paid license will supersede a trial on the machine where activation succeeds.
 
 Practical step-by-step upgrade & verification (copyable)
 

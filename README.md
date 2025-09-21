@@ -262,6 +262,73 @@ Install from PyPI:
 python -m pip install tensorpack-f==0.1.3
 ```
 
+## Quick Reference
+
+After installation, get an overview of all available commands:
+
+```bash
+tensorpack --help
+```
+
+```
+usage: tensorpack [-h] [--activate-license ACTIVATE_LICENSE] [--verbose] [--output OUTPUT] [--json] [--log LOG]
+                  {tensor_to_matrix,matrix_to_tensor,discover-connections,traverse-graph,add-transform,list-transforms,describe-transform,remove-transform,activate-license,license-info,usage-status,upgrade}
+                  ...
+
+TensorPack: CLI tool for tensor-matrix conversions and transformations
+
+positional arguments:
+  {tensor_to_matrix,matrix_to_tensor,discover-connections,traverse-graph,add-transform,list-transforms,describe-transform,remove-transform,activate-license,license-info,usage-status,upgrade}
+                        Command to execute
+    tensor_to_matrix    Convert tensor to matrix
+    matrix_to_tensor    Convert matrix to tensor
+    discover-connections
+                        Discover hidden connections between matrices/tensors with multiple export formats
+    traverse-graph      Discover semantic connections between datasets using three focused exploration modes with multiple export       
+                        formats
+    add-transform       Add a custom transformation to TensorPack
+    list-transforms     List available transformations
+    describe-transform  Describe a specific transformation
+    remove-transform    Remove a transformation from the registry
+    activate-license    Activate a license key
+    license-info        Show current license information
+    usage-status        Show daily usage statistics (free tier)
+    upgrade             Show upgrade information and open upgrade page
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --activate-license ACTIVATE_LICENSE
+                        Activate a license key (paste the key here) (default: None)
+  --verbose, -v         Enable verbose logging (default: False)
+  --output OUTPUT, -o OUTPUT
+                        Output file path (default: None)
+  --json                Output in JSON format (default: False)
+  --log LOG             Log to file (default: None)
+```
+
+### Getting Help for Specific Commands
+
+To see detailed help for any subcommand, use:
+
+```bash
+tensorpack <command> --help
+```
+
+Examples:
+```bash
+# Get help for tensor conversion
+tensorpack tensor_to_matrix --help
+
+# Get help for discovering connections
+tensorpack discover-connections --help
+
+# Get help for graph traversal
+tensorpack traverse-graph --help
+
+# Get help for adding custom transforms
+tensorpack add-transform --help
+```
+
 ## Return Structure Documentation
 
 These documents explain the data structures returned by key TensorPack commands:
