@@ -8,6 +8,27 @@ TensorPack is a software product with a command-line interface (CLI) that helps 
 
 TensorPack builds upon the foundation of [MatrixTransformer](https://github.com/fikayoAy/MatrixTransformer), providing a higher-level interface and additional features for data analysis and transformation. While MatrixTransformer offers core matrix manipulation capabilities, TensorPack extends these with comprehensive CLI tools, semantic analysis, relationship discovery, and visualization features for complex data workflows.
 
+## Supported File Formats
+
+TensorPack supports a wide range of input and output formats:
+
+### Data Formats
+- **JSON**: `.json` - Structured data with support for multi-dimensional arrays
+- **CSV/TSV**: `.csv`, `.tsv` - Comma and tab-separated values
+- **Excel**: `.xlsx`, `.xls` - Microsoft Excel workbooks
+- **NumPy**: `.npy`, `.npz` - NumPy binary array formats (optimized for large datasets)
+
+### Media Formats
+- **Images**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.tif`, `.tiff`, `.gif` - With optional OCR text extraction
+- **Videos**: `.mp4`, `.avi`, `.mov`, `.wmv`, `.flv`, `.mkv`, `.webm` - Frame-based analysis supported
+
+### Text Formats
+- **Documents**: `.txt`, `.md`, `.html`, `.xml` - Plain text and markup formats
+- **Source Code**: `.py`, `.js`, `.java`, `.c`, `.cpp`, `.h`, `.rb`, `.go`, `.rs`, `.php`, `.ts` - Programming language files
+
+### Custom Format Support
+TensorPack supports **extensible format handling** through custom transforms. You can add support for any proprietary or specialized format (including `.parquet`, `.hdf5`, `.mat`, etc.) by registering custom Python transforms that act as file loaders.
+
 ## Table of Contents
 
 - [Pain Point Analysis](#pain-point-analysis)
@@ -242,6 +263,8 @@ To use TensorPack, a license is required. Please request one by filling out the 
 Click the Google Forms logo above to open the License Request Form.
 
 ### License Types
+
+This platform is freely available for academic use in the UK. For non-academic capabilities, an early access premium license is available.
 
 TensorPack offers several license tiers:
 
