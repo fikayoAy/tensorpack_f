@@ -1,6 +1,18 @@
 # matrix_to_tensor
 
 This command reconstructs a **multi-dimensional tensor** from a saved matrix and its metadata. It guarantees that the original structure, shape, and meaning of the data can be restored.
+## Table of Contents
+
+- [General Syntax](#general-syntax)
+- [What it does](#what-it-does)
+- [Why it matters](#why-it-matters)
+- [Inputs](#inputs)
+- [Outputs (by format)](#outputs-by-format)
+- [Examples](#examples)
+- [Quick notes](#quick-notes)
+- [Quick try](#quick-try)
+- [CLI Reference](#cli-reference)
+- [Programmatic usage](#programmatic-usage)
 
 ### General Syntax
 
