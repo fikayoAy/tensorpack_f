@@ -256,7 +256,25 @@ Free licenses are bound to the machine they are activated on. This prevents lice
 
 ## Installation
 
-Install from PyPI:
+**Requirements**: Python 3.9 or higher
+
+**Recommended Setup**: Create a virtual environment to avoid dependency conflicts:
+
+```bash
+# Create a virtual environment
+python -m venv tensorpack
+
+# Activate the virtual environment (Windows PowerShell)
+tensorpack\Scripts\Activate.ps1
+
+# Install TensorPack
+python -m pip install tensorpack-f==0.1.8
+
+# Verify installation
+tensorpack --help
+```
+
+**Quick Install** (if you prefer to install globally):
 
 ```bash
 python -m pip install tensorpack-f==0.1.8
