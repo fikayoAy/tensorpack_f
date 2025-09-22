@@ -1,6 +1,26 @@
 # add_transform_command
 
 Register a **custom transformation** or **entity matcher** into TensorPack’s user transform registry so it can be applied automatically during data loading and processing.
+## Table of Contents
+
+- [What it does](#what-it-does)
+- [Saving behavior & output location](#saving-behavior--output-location)
+- [CLI Reference](#cli-reference)
+- [Example CLI invocations](#example-cli-invocations)
+- [Quick Notes](#quick-notes)
+- [Quick Notes (finalized)](#quick-notes-finalized)
+  - [Primary output & metadata](#primary-output--metadata)
+  - [Registry behavior](#registry-behavior)
+  - [Source types](#source-types)
+  - [Properties & neighbors](#properties--neighbors)
+  - [Testing](#testing)
+  - [Operation types](#operation-types)
+  - [MatrixTransformer integration](#matrixtransformer-integration)
+  - [License checks](#license-checks)
+  - [Failure handling](#failure-handling)
+  - [Provenance & safety](#provenance--safety)
+- [Practical suggestions](#practical-suggestions)
+- [Metadata handling for file-format transforms (recommended)](#metadata-handling-for-file-format-transforms-recommended)
 
 ## What it does
 
