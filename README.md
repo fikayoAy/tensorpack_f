@@ -1,5 +1,7 @@
 # TensorPack
-
+[![PyPI version](https://img.shields.io/pypi/v/tensorpack-f.svg)](https://pypi.org/project/tensorpack-f/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/tensorpack-f.svg)](https://pypi.org/project/tensorpack-f/)
+[![License](https://img.shields.io/pypi/l/tensorpack-f.svg)](https://github.com/fikayoAy/tensorpack/blob/main/LICENSE)
 ## What it is
 
 _A compact CLI toolkit to convert, analyze and discover relationships across datasets (tensors, matrices, tabular, text and more)._  
