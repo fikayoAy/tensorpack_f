@@ -2,6 +2,14 @@
 This explores semantic pathways and connections
 
 **between datasets** (matrices, JSON, images, video, text, etc.). Supports point-to-point traversal, bridge discovery, and entity search — with outputs for further network analysis and visualization.
+## Table of Contents
+
+- [What it does](#what-it-does)
+- [Saving behavior & output extensions](#saving-behavior--output-extensions)
+- [CLI Reference](#cli-reference)
+- [Quick Notes](#quick-notes)
+- [Programmatic usage](#programmatic-usage)
+- [Demo videos](#demo-videos)
 
 ## What it does
 
