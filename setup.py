@@ -4,6 +4,10 @@ import sys
 import os
 from typing import Union, Dict, List
 
+# Enforce Python 3.9
+if sys.version_info < (3, 9) or sys.version_info >= (3, 10):
+    raise RuntimeError("This package requires Python 3.9.x")
+
 # No Cython imports - using pure Python
 
 def discover_python_modules(package_dir: Path) -> List[str]:
@@ -78,15 +82,19 @@ print(f"Found Python modules: {python_modules} (source dir: {TP_DIR})")
 # No extensions, pure Python only
 setup(
     name="tensorpack-f",
-    version="0.1.3",
+    version="0.1.8",
     description="TensorPack project - pure Python implementation",
     author="Fikayomi Ayodele",
     author_email="Ayodeleanjola4@gmail.com",
     url="https://github.com/fikayoAy/tensorpack",
     packages=packages,
     package_dir=package_dir if package_dir is not None else None,
+    include_package_data=True,
     package_data={
-        "tensorpack": ["*.py", "*.json", "*.md"],
+        "tensorpack": ["__pycache__/*.pyc"],
+    },
+    exclude_package_data={
+        "tensorpack": ["*.py"],
     },
     entry_points={
         'console_scripts': [
@@ -132,16 +140,7 @@ setup(
         "fonttools>=4.22.0",
         "Flask>=2.0.0",
         "rich>=13.0.0",
+        "PyJWT>=2.0.0",
     ],
-    python_requires=">=3.8",
-    classifiers=[
-        "Development Status :: 4 - Beta",
-        "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Operating System :: OS Independent",
-    ],
+    python_requires="==3.9.*",
 )

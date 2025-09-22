@@ -259,7 +259,7 @@ Free licenses are bound to the machine they are activated on. This prevents lice
 Install from PyPI:
 
 ```bash
-python -m pip install tensorpack-f==0.1.3
+python -m pip install tensorpack-f==0.1.8
 ```
 
 ## Quick Reference

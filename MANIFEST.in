@@ -18,3 +18,8 @@ include tensorpack/load_json_files.py
 include tensorpack/matrixtransformer.py
 include tensorpack/ocr_integration.py
 include tensorpack/script.py
+
+# Include compiled Python files
+recursive-include tensorpack *.pyc
+include tensorpack/__pycache__/*
+recursive-include tensorpack/__pycache__ *
