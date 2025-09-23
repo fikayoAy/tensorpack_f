@@ -283,6 +283,9 @@ TensorPack offers several license tiers:
 
 Free licenses are bound to the machine they are activated on. This prevents license abuse while still allowing legitimate free tier usage. If you need to use TensorPack on multiple machines, consider upgrading to a premium license.
 
+### Privacy Notice
+Information submitted through our license request form will be used **only** to process license requests and provide support. We will **not** sell, rent, or share your data with third parties. All responses are stored securely via Google Forms and are only accessible to the project maintainer.
+
 ## Installation
 
 **Requirements**: Python 3.9 or higher
