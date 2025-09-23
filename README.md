@@ -3,6 +3,8 @@
 [![Python Versions](https://img.shields.io/pypi/pyversions/tensorpack-f.svg)](https://pypi.org/project/tensorpack-f/)
 [![License](https://img.shields.io/pypi/l/tensorpack-f.svg)](https://github.com/fikayoAy/tensorpack/blob/main/LICENSE)
 [![Ask for Help](https://img.shields.io/badge/help-open%20an%20issue-brightgreen)](https://github.com/fikayoAy/tensorpack/issues/new)
+[![Request Access](https://img.shields.io/badge/Request%20License-Form-blue)](https://docs.google.com/forms/d/e/1FAIpQLSe99mLhzKhcGwM8gvmw4Bf-Z5j0FMBmDHuUavN06mSZ55LgiA/viewform?usp=sharing)
+
 
 ## What it is
 
@@ -262,13 +264,13 @@ Use `--export-formats all` to export in all available formats, or specify indivi
 
 To use TensorPack, a license is required. Please request one by filling out the form below.
 
-[![Request a License](https://www.gstatic.com/images/branding/product/1x/forms_48dp.png)](https://docs.google.com/forms/d/e/1FAIpQLSe99mLhzKhcGwM8gvmw4Bf-Z5j0FMBmDHuUavN06mSZ55LgiA/viewform?usp=sharing&ouid=113684697499334755912)
+[![Request a Access](https://www.gstatic.com/images/branding/product/1x/forms_48dp.png)](https://docs.google.com/forms/d/e/1FAIpQLSe99mLhzKhcGwM8gvmw4Bf-Z5j0FMBmDHuUavN06mSZ55LgiA/viewform?usp=sharing&ouid=113684697499334755912)
 
 Click the Google Forms logo above to open the License Request Form.
 
-### License Types
+### Access Types
 
-This platform is freely available for academic use in the UK. For non-academic capabilities, an early access premium license is available.
+This platform is freely available for academic use in the UK. For non-academic capabilities, an early access premium access license is available.
 
 TensorPack offers several license tiers:
 
