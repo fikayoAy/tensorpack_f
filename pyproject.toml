@@ -34,7 +34,7 @@ dependencies = [
 	"zarr",
 	"requests",
 	"cryptography",
-	"paddleocr",
+	
 	"numba",
 	"joblib",
 	"networkx",

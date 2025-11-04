@@ -2,6 +2,23 @@
 
 This document explains what happens when you run the graph traversal tool and what information it gives you back. We've written this guide to help both technical and non-technical readers understand the valuable insights this tool provides.
 
+## Table of Contents
+
+- [What This Tool Does](#what-this-tool-does)
+- [Common Information in All Modes](#common-information-in-all-modes)
+- [Mode 1: Dataset Pathway Exploration](#mode-1-dataset-pathway-exploration)
+- [Mode 2: Semantic Bridges Exploration](#mode-2-semantic-bridges-exploration)
+- [Mode 3: Entity Search Exploration](#mode-3-entity-search-exploration)
+- [File Export Options](#file-export-options)
+- [Visual Output](#visual-output)
+- [Error Handling](#error-handling)
+- [What Makes These Results Valuable](#what-makes-these-results-valuable)
+  - [Confidence Scoring](#confidence-scoring)
+  - [Multiple Exploration Modes](#multiple-exploration-modes)
+  - [Rich Entity Analysis](#rich-entity-analysis)
+  - [Visualization Options](#visualization-options)
+
+
 ## What This Tool Does
 
 The graph traversal tool helps you explore connections between your datasets in different ways. Think of it as an explorer that can:

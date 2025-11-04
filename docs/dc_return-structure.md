@@ -2,6 +2,22 @@
 
 This document explains what happens when you run the data connection discovery tool and what information it gives you back. We've written this guide to help both technical and non-technical readers understand the valuable insights this tool provides.
 
+## Table of Contents
+
+- [What This Tool Does](#what-this-tool-does)
+- [1. Basic Information About Your Analysis](#1-basic-information-about-your-analysis)
+- [2. Individual Dataset Profiles](#2-individual-dataset-profiles)
+- [3. Connections Between Your Datasets](#3-connections-between-your-datasets)
+- [4. Connection Summary and Statistics](#4-connection-summary-and-statistics)
+- [5. Dataset Clusters (Optional)](#5-dataset-clusters-optional)
+- [What Makes These Results Valuable](#what-makes-these-results-valuable)
+  - [Smart Entity Detection](#smart-entity-detection)
+  - [Multi-Factor Scoring](#multi-factor-scoring)
+  - [Plain-English Explanations](#plain-english-explanations)
+  - [Multiple Output Formats](#multiple-output-formats)
+  - [Visual Analysis Tools](#visual-analysis-tools)
+
+
 ## What This Tool Does
 
 The connection discovery tool examines your datasets and finds relationships between them - whether they contain similar information, share common elements, or could work well together. Think of it as a smart assistant that looks through your files and tells you: "These two spreadsheets have customer information that overlaps" or "These datasets would cluster nicely into three groups."

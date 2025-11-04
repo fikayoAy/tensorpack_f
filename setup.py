@@ -119,7 +119,7 @@ setup(
         "zarr>=2.8.0",
         "requests>=2.25.0",
         "cryptography>=3.4.0",
-        "paddleocr>=2.0.0",
+        
         "numba>=0.53.0",
         "joblib>=1.0.0",
         "networkx>=2.5.0",
