@@ -1,4 +1,10 @@
 # TensorPack
+[![PyPI version](https://img.shields.io/pypi/v/tensorpack-f.svg)](https://pypi.org/project/tensorpack-f/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/tensorpack-f.svg)](https://pypi.org/project/tensorpack-f/)
+[![License](https://img.shields.io/pypi/l/tensorpack-f.svg)](https://github.com/fikayoAy/tensorpack/blob/main/LICENSE)
+[![Ask for Help](https://img.shields.io/badge/help-open%20an%20issue-brightgreen)](https://github.com/fikayoAy/tensorpack/issues/new)
+[![Request Access](https://img.shields.io/badge/Request%20License-Form-blue)](https://docs.google.com/forms/d/e/1FAIpQLSe99mLhzKhcGwM8gvmw4Bf-Z5j0FMBmDHuUavN06mSZ55LgiA/viewform?usp=sharing)
+
 
 [![PyPI version](https://img.shields.io/pypi/v/tensorpack-f.svg)](https://pypi.org/project/tensorpack-f/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/tensorpack-f.svg)](https://pypi.org/project/tensorpack-f/)
@@ -286,6 +292,34 @@ Each command supports various export formats:
 
 Use `--export-formats all` to export in all available formats, or specify individual formats with comma-separated values.
 
+<<<<<<< HEAD
+=======
+## License
+
+To use TensorPack, a license is required. Please request one by filling out the form below.
+
+[![Request a Access](https://www.gstatic.com/images/branding/product/1x/forms_48dp.png)](https://docs.google.com/forms/d/e/1FAIpQLSe99mLhzKhcGwM8gvmw4Bf-Z5j0FMBmDHuUavN06mSZ55LgiA/viewform?usp=sharing&ouid=113684697499334755912)
+
+Click the Google Forms logo above to open the License Request Form.
+
+### Access Types
+
+This platform is freely available for academic use in the UK. For non-academic capabilities, an early access premium access license is available.
+
+TensorPack offers several license tiers:
+
+- **Free**: Basic functionality with limited usage. Machine-bound to prevent abuse.
+- **Trial**: Full functionality for 14 days.
+- **Academic**: Full functionality for academic users (automatically detected via email domain).
+- **Premium**: Full functionality with no limitations.
+
+### Machine Binding
+
+Free licenses are bound to the machine they are activated on. This prevents license abuse while still allowing legitimate free tier usage. If you need to use TensorPack on multiple machines, consider upgrading to a premium license.
+>>>>>>> a1a9512b1156bbb48e8e1a5654b149de636024f0
+
+### Privacy Notice
+Information submitted through our license request form will be used **only** to process license requests and provide support. We will **not** sell, rent, or share your data with third parties. All responses are stored securely via Google Forms and are only accessible to the project maintainer.
 
 ## Installation
 

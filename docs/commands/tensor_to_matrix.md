@@ -1,6 +1,18 @@
 # tensor_to_matrix
 
 This command takes a complex, multi-dimensional dataset (a **tensor**) and flattens it into a simpler, 2D **matrix** that is easier to analyze and work with. At the same time, it saves extra information (metadata) so the original tensor can be **reconstructed later without losing anything important**.
+## Table of Contents
+
+- [General Syntax](#general-syntax)
+- [What it does](#what-it-does)
+- [Why it matters](#why-it-matters)
+- [Inputs](#inputs)
+- [Outputs (by format)](#outputs-by-format)
+- [Examples](#examples)
+- [Quick try](#quick-try)
+- [Quick notes](#quick-notes)
+- [CLI Reference](#cli-reference)
+- [Programmatic usage](#programmatic-usage)
 
 ### General Syntax
 
