@@ -2,19 +2,40 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import time
-from typing import Dict, Union
+from typing import Any, Dict, Union
 import numpy as np
 import scipy
 import torch
 import logging
 import math
 from enum import Enum, auto
+from collections import OrderedDict
 from sklearn.neighbors import NearestNeighbors
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 
 
 
+def _compute_batch_similarities(batch_features, features):
+    """Top-level helper for ProcessPoolExecutor: compute similarities for a batch.
+
+    Keeps the computation self-contained and picklable for multiprocessing on Windows.
+    Returns a numpy array (converted to list when needed by caller).
+    """
+    import numpy as _np
+    try:
+        bf = _np.asarray(batch_features, dtype=_np.float64)
+        F = _np.asarray(features, dtype=_np.float64)
+        # Compute dot product batch x features^T
+        sims = _np.dot(bf, F.T)
+        return sims
+    except Exception:
+        # On failure return zeros of appropriate shape
+        try:
+            return _np.zeros((len(batch_features), len(features)), dtype=_np.float64)
+        except Exception:
+            return []
 
 
 class MatrixType(Enum):
@@ -39,96 +60,84 @@ class MatrixType(Enum):
 
 
 def _coerce_rule_result(self, result, original_input, is_torch=False, device=None):
-        """Ensure a transform rule result is a numeric numpy array or torch tensor.
+    """Coerce rule outputs to a numeric numpy array or torch tensor."""
+    try:
+        import torch as _torch
+    except Exception:
+        _torch = None
 
-        If a rule returns metadata (dict) try to extract common numeric entries.
-        Otherwise fall back to a safe numeric representation derived from the
-        original input to avoid downstream dict+dict arithmetic errors.
-        """
+    def _maybe_tensor(array_like):
+        if _torch is not None and is_torch:
+            try:
+                return _torch.tensor(array_like, device=device)
+            except Exception:
+                return np.asarray(array_like)
+        return np.asarray(array_like)
+
+    # Torch tensors can pass straight through
+    if _torch is not None and isinstance(result, _torch.Tensor):
+        return result
+
+    # Dictionaries frequently hold nested numeric data
+    if isinstance(result, dict):
+        for key in ("matrix", "array", "data", "values", "numpy_array", "result"):
+            if key in result:
+                try:
+                    return _maybe_tensor(result[key])
+                except Exception:
+                    continue
+
+        scalars = [float(v) for v in result.values() if isinstance(v, (int, float))]
+        if scalars:
+            return _maybe_tensor(scalars)
+
         try:
-            # If torch tensor, leave as-is
-            try:
-                import torch as _torch
-            except Exception:
-                _torch = None
-
-            if _torch is not None and isinstance(result, _torch.Tensor):
-                return result
-
-            # If result is a dict, try common keys
-            if isinstance(result, dict):
-                for key in ('matrix', 'array', 'data', 'values', 'numpy_array', 'result'):
-                    if key in result:
-                        try:
-                            arr = np.asarray(result[key])
-                            return _torch.tensor(arr, device=device) if (_torch is not None and is_torch) else arr
-                        except Exception:
-                            continue
-                # If dict contains numeric scalars, try to build a small array
-                numeric_vals = []
-                for v in result.values():
-                    if isinstance(v, (int, float)):
-                        numeric_vals.append(v)
-                if numeric_vals:
-                    arr = np.asarray(numeric_vals, dtype=np.float64)
-                    return _torch.tensor(arr, device=device) if (_torch is not None and is_torch) else arr
-
-                # Nothing usable - fall back to original input coerced to numeric
-                try:
-                    base = original_input
-                    if _torch is not None and isinstance(base, _torch.Tensor):
-                        base = base.detach().cpu().numpy()
-                    arr = np.asarray(base, dtype=np.float64)
-                    return _torch.tensor(arr, device=device) if (_torch is not None and is_torch) else arr
-                except Exception:
-                    # As last resort return small zero scalar
-                    return np.zeros((1, 1))
-
-            # If result is list/tuple/ndarray-like, coerce to numeric ndarray
-            if isinstance(result, (list, tuple)):
-                try:
-                    arr = np.asarray(result, dtype=np.float64)
-                    return _torch.tensor(arr, device=device) if (_torch is not None and is_torch) else arr
-                except Exception:
-                    # try object->numeric fallback
-                    try:
-                        arr = np.asarray(result)
-                        if arr.dtype == object:
-                            arr = np.asarray([float(x) for x in arr])
-                        return _torch.tensor(arr, device=device) if (_torch is not None and is_torch) else arr
-                    except Exception:
-                        return np.zeros((1, 1))
-
-            # If it's already a numpy array, ensure numeric dtype
-            if isinstance(result, np.ndarray):
-                if result.dtype == object or not np.issubdtype(result.dtype, np.number):
-                    try:
-                        return result.astype(np.float64)
-                    except Exception:
-                        # attempt to coerce elementwise
-                        try:
-                            flat = [float(x) for x in result.ravel()]
-                            arr = np.asarray(flat, dtype=np.float64).reshape(result.shape)
-                            return arr
-                        except Exception:
-                            return np.zeros((1, 1))
-                return result
-
-            # If scalar numeric, wrap in array
-            if isinstance(result, (int, float)):
-                return np.array([[float(result)]])
-
-            # Last resort: try to coerce to numpy
-            try:
-                arr = np.asarray(result, dtype=np.float64)
-                return arr
-            except Exception:
-                return np.zeros((1, 1))
+            base = original_input
+            if _torch is not None and isinstance(base, _torch.Tensor):
+                base = base.detach().cpu().numpy()
+            return _maybe_tensor(np.asarray(base, dtype=np.float64))
         except Exception:
             return np.zeros((1, 1))
 
-def create_ai_hypersphere_container(self, ai_entity, dimension=None, base_radius=1.0, 
-                                   field_strength=1.0, time_system=None):
+    # Generic iterable payloads
+    if isinstance(result, (list, tuple)):
+        try:
+            return _maybe_tensor(result)
+        except Exception:
+            try:
+                coerced = np.asarray(result)
+                if coerced.dtype == object:
+                    coerced = np.asarray([float(x) for x in coerced])
+                return _maybe_tensor(coerced)
+            except Exception:
+                return np.zeros((1, 1))
+
+    if isinstance(result, np.ndarray):
+        if result.dtype == object or not np.issubdtype(result.dtype, np.number):
+            try:
+                return result.astype(np.float64)
+            except Exception:
+                try:
+                    flat = [float(x) for x in result.ravel()]
+                    return np.asarray(flat, dtype=np.float64).reshape(result.shape)
+                except Exception:
+                    return np.zeros((1, 1))
+        return result
+
+    if isinstance(result, (int, float)):
+        return np.array([[float(result)]])
+
+    return np.zeros((1, 1))
+
+
+def create_ai_hypersphere_container(
+    self,
+    ai_entity,
+    dimension=None,
+    base_radius=1.0,
+    field_strength=1.0,
+    time_system=None,
+):
     """
     Creates a hyperdimensional container that houses an AI entity within a hypersphere.
     The container provides a mathematically rich environment with dynamic dimensional
@@ -1005,6 +1014,14 @@ class MatrixTransformer:
         self.coherence_memory = []
         self.matrices = []
         self.layer_info = []
+        # Per-instance storage for projection diagnostics
+        try:
+            self._projection_distances = []
+        except Exception:
+            self._projection_distances = []
+        # Global class-level storage so external scripts can access distances
+        if not hasattr(self.__class__, '_projection_distances_global'):
+            setattr(self.__class__, '_projection_distances_global', [])
       
      
     def _initialize_decision_hypercube(self):
@@ -1927,7 +1944,7 @@ class MatrixTransformer:
                             card[i] = property_weights.get(prop, 0.5)
                     
                     # Project cardinality to hypersphere (adjust radius if needed)
-                    sphere_embedding = self._project_to_hypersphere(card, radius=1.0, preserve_type=False)
+                    sphere_embedding = self._project_to_hypersphere(card, radius=5, preserve_type=False)
                     
                     # Store in hypercube
                     self.cube[coords] = {
@@ -2016,7 +2033,7 @@ class MatrixTransformer:
         candidates.append(max_clusters)
         
         best_bic = float('inf')
-        best_k = 2
+        best_k = 3
         
         for k in candidates:
             if k < len(sampled_data):
@@ -6352,7 +6369,7 @@ class MatrixTransformer:
             return np.clip(matrix, -side_length/2, side_length/2)
         
 
-    def _project_to_hypersphere(self, matrix, radius=1.0, preserve_type=True):
+    def _project_to_hypersphere(self, matrix, radius=1.0, preserve_type=True, batch_size=None, use_memmap=False, memmap_dir=None):
         """
         Project matrix to hypersphere with given radius, preserving structure.
         Works with tensors of any dimension, using the enhanced tensor_to_matrix system.
@@ -6365,6 +6382,74 @@ class MatrixTransformer:
         Returns:
             Matrix/tensor projected to hypersphere with specified radius
         """
+        # Batch handling: if a list/tuple of matrices is provided, process in chunks
+        is_list_input = isinstance(matrix, (list, tuple))
+        # If a numpy array with ndim==3 and batch_size set, treat it as a batch of matrices
+        if isinstance(matrix, np.ndarray) and matrix.ndim == 3 and batch_size is not None:
+            is_list_input = True
+        if is_list_input:
+            matrices = list(matrix) if not isinstance(matrix, np.ndarray) else [matrix[i] for i in range(matrix.shape[0])]
+            N = len(matrices)
+            if batch_size is None:
+                batch_size_calc = min(256, N)
+            else:
+                batch_size_calc = batch_size
+            results = []
+            # Setup memmap output if requested
+            memmap_tmpdir = None
+            results_mmap = None
+            try:
+                if use_memmap:
+                    import tempfile, os
+                    memmap_tmpdir = memmap_dir or tempfile.mkdtemp(prefix='tp_proj_')
+                    # Determine shape for memmap if possible: try to compute flattened lengths
+                    flat_lens = []
+                    for m in matrices:
+                        try:
+                            m_np = m.detach().cpu().numpy() if isinstance(m, torch.Tensor) else np.asarray(m)
+                            flat_lens.append(m_np.size)
+                        except Exception:
+                            flat_lens.append(0)
+                    max_len = max(flat_lens) if flat_lens else 0
+                    if max_len > 0:
+                        results_mmap = np.memmap(os.path.join(memmap_tmpdir, 'projected.dat'), dtype=np.float32, mode='w+', shape=(N, max_len))
+                for i in range(0, N, batch_size_calc):
+                    j = min(i + batch_size_calc, N)
+                    batch = matrices[i:j]
+                    # If all shapes are identical, we can stack and vectorize
+                    homogeneous = True
+                    shapes = [ (np.asarray(m.detach().cpu().numpy() if isinstance(m, torch.Tensor) else m).shape) for m in batch]
+                    for s in shapes[1:]:
+                        if s != shapes[0]:
+                            homogeneous = False
+                            break
+                    if homogeneous and len(shapes[0]) <= 2:
+                        # stack and use vectorized 2D helper
+                        stacked = np.stack([np.asarray(m.detach().cpu().numpy() if isinstance(m, torch.Tensor) else m, dtype=float) for m in batch], axis=0)
+                        # If stacked.ndim == 3 and consistent, vectorize processing
+                        proj_stack = self._project_2d_matrix_to_hypersphere(stacked, radius=radius, preserve_type=preserve_type)
+                        # Unpack results
+                        for k in range(proj_stack.shape[0]):
+                            res = proj_stack[k]
+                            if results_mmap is not None:
+                                flat = np.asarray(res).flatten()
+                                results_mmap[i + k, :flat.size] = flat.astype(np.float32)
+                            else:
+                                results.append(res)
+                    else:
+                        # heterogeneous batch; fallback to per-element processing
+                        for k, m in enumerate(batch):
+                            res = self._project_to_hypersphere(m, radius=radius, preserve_type=preserve_type)
+                            if results_mmap is not None:
+                                flat = np.asarray(res).flatten()
+                                results_mmap[i + k, :flat.size] = flat.astype(np.float32)
+                            else:
+                                results.append(res)
+                return results_mmap if results_mmap is not None else results
+            finally:
+                # If memmap was used, keep files on disk; do not auto-delete to allow downstream reading
+                pass
+
         # Handle scalar and None inputs
         if matrix is None:
             return None
@@ -6403,17 +6488,41 @@ class MatrixTransformer:
         else:
             # For 1D and 2D matrices, use direct projection
             result = self._project_2d_matrix_to_hypersphere(matrix_np, radius, preserve_type)
-        
+
+        # Compute and store local spherical distance diagnostics (mirror of 2D helper)
+        try:
+            flat = np.array(result).flatten()
+            fnorm = np.linalg.norm(flat)
+            if fnorm > 1e-10:
+                x = flat / fnorm
+                x0 = np.ones_like(x)
+                x0 = x0 / (np.linalg.norm(x0) + 1e-12)
+                dist = float(self.local_distance_sphere(x0, x))
+                try:
+                    if hasattr(self, '_projection_distances'):
+                        self._projection_distances.append(dist)
+                except Exception:
+                    pass
+                try:
+                    cls = self.__class__
+                    if not hasattr(cls, '_projection_distances_global'):
+                        setattr(cls, '_projection_distances_global', [])
+                    cls._projection_distances_global.append(dist)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         # Convert back to original format
         if original_is_tensor:
             try:
                 result = torch.tensor(result, device=original_device, dtype=original_dtype)
             except:
                 logging.warning("Failed to convert result back to PyTorch tensor")
-        
+
         return result
 
-    def _project_2d_matrix_to_hypersphere(self, matrix, radius=1.0, preserve_type=True):
+    def _project_2d_matrix_to_hypersphere(self, matrix, radius=7, preserve_type=True):
         """
         Project a 2D matrix to a hypersphere with given radius.
         Helper method for _project_to_hypersphere.
@@ -6429,6 +6538,44 @@ class MatrixTransformer:
         original_shape = matrix.shape
         original_dtype = matrix.dtype
         original_ndim = len(original_shape)
+
+        # If a batch of matrices is passed in as a 3D array (B, H, W) or (B, L), handle vectorized processing
+        if isinstance(matrix, np.ndarray) and matrix.ndim == 3:
+            # Matrix stack: (B, H, W) or (B, L)
+            B = matrix.shape[0]
+            # Flatten per-matrix
+            flat = matrix.reshape(B, -1)
+            norms = np.linalg.norm(flat, axis=1)
+            result_stack = np.empty_like(flat)
+            small_mask = norms < 1e-10
+            # For small norms, fill with scaled ones
+            sizes = flat.shape[1]
+            if np.any(small_mask):
+                result_stack[small_mask] = np.ones((np.sum(small_mask), sizes), dtype=matrix.dtype) * (radius / np.sqrt(sizes))
+            # For valid norms, scale
+            valid_mask = ~small_mask
+            if np.any(valid_mask):
+                result_stack[valid_mask] = (flat[valid_mask].astype(float) * (radius / norms[valid_mask][:, None])).astype(matrix.dtype)
+            # Reshape back to original per-matrix shapes
+            result_stack = result_stack.reshape(matrix.shape)
+            # If preserve_type True, we need to apply per-matrix transform for square matrices
+            if preserve_type:
+                for i in range(B):
+                    mat_i = result_stack[i]
+                    if mat_i.shape[0] == mat_i.shape[1]:
+                        mt = self._detect_matrix_type(mat_i)
+                        tr = self._get_transform_method(mt)
+                        if tr:
+                            try:
+                                result_stack[i] = tr(mat_i)
+                            except Exception:
+                                pass
+                # Enforce final exact radius after transforming
+                for i in range(B):
+                    final_norm = np.linalg.norm(result_stack[i])
+                    if final_norm > 1e-10:
+                        result_stack[i] = result_stack[i] * (radius / final_norm)
+            return result_stack.astype(original_dtype)
         
         # Handle 1D vectors by reshaping to 2D for consistent processing
         if original_ndim == 1:
@@ -6440,10 +6587,10 @@ class MatrixTransformer:
         # Handle near-zero matrices
         if current_norm < 1e-10:
             # Create a non-zero matrix with the desired norm
-            result = np.ones_like(matrix) * (radius / np.sqrt(matrix.size))
+            result = np.ones_like(matrix, dtype=float) * (radius / np.sqrt(matrix.size))
         else:
             # Scale matrix to have desired norm
-            result = matrix * (radius / current_norm)
+            result = (matrix.astype(float) * (radius / current_norm))
         
         # Apply type preservation if requested (only for square matrices)
         if preserve_type and matrix.shape[0] == matrix.shape[1]:
@@ -6458,12 +6605,287 @@ class MatrixTransformer:
         if final_norm > 1e-10:
             # Force exact scaling to radius with no other operations after this
             result = result * (radius / final_norm)
+        # Compute local spherical distance from a canonical reference direction
+        try:
+            flat = result.flatten()
+            fnorm = np.linalg.norm(flat)
+            if fnorm > 1e-10:
+                x = flat / fnorm
+                x0 = np.ones_like(x)
+                x0 = x0 / (np.linalg.norm(x0) + 1e-12)
+                # local distance on sphere (in radians)
+                dist = float(self.local_distance_sphere(x0, x))
+                # store per-instance and class-global diagnostics (safe, non-blocking)
+                try:
+                    # per-instance
+                    if hasattr(self, '_projection_distances'):
+                        self._projection_distances.append(dist)
+                except Exception:
+                    pass
+                try:
+                    # class-global (accessible after pipeline runs)
+                    cls = self.__class__
+                    if not hasattr(cls, '_projection_distances_global'):
+                        setattr(cls, '_projection_distances_global', [])
+                    cls._projection_distances_global.append(dist)
+                except Exception:
+                    pass
+        except Exception:
+            pass
         
         # Restore original shape if the input was 1D
         if original_ndim == 1:
             result = result.reshape(original_shape)
         
+        # Don't cast back to integer types - keep as float
+        if np.issubdtype(original_dtype, np.integer):
+            return result.astype(np.float64)
+        
         return result.astype(original_dtype)
+
+    # Helpers for spherical log map and local distance
+    def log_map_sphere(self, x0, x, eps=1e-7, batch_size=256):
+        """
+        Compute the logarithmic map on the unit sphere.
+
+        Supports both single vector inputs (1D arrays) and batched inputs (2D arrays)
+        across the first dimension. If the inputs are batched and have more than
+        `batch_size` vectors, the function will process them in chunks.
+
+        Args:
+            x0: numpy array of shape (D,) or (N, D) -- base unit vector(s)
+            x: numpy array of shape (D,) or (N, D) -- target unit vector(s)
+            eps: numeric epsilon threshold for numerical stability.
+            batch_size: maximum per-chunk batch size when processing many vectors.
+
+        Returns:
+            Tangent vector(s) at x0 with shape matching x (and x0 when batched).
+        """
+        x0 = np.asarray(x0, dtype=float)
+        x = np.asarray(x, dtype=float)
+        logging.debug(f"log_map_sphere: x0 shape={x0.shape}, norm={np.linalg.norm(x0):.6f}, first 3 elements={x0.ravel()[:3]}")
+        logging.debug(f"log_map_sphere: x shape={x.shape}, norm={np.linalg.norm(x) if x.ndim == 1 else np.linalg.norm(x, axis=1).mean():.6f}, first 3 elements={x.ravel()[:3]}")
+        # Use theta-based tolerance: increased to 1e-6 to handle actual data with angles ~6.6e-7
+        # This prevents treating valid small angles as identical points
+        theta_identical_tol = max(1e-6, eps)
+        antipodal_tol = max(1e-9, eps * 10)
+
+        # Determine whether this is a single-vector case (both inputs 1D)
+        single_case = (x.ndim == 1 and x0.ndim == 1)
+
+        if single_case:
+            x0 = np.asarray(x0, dtype=float)
+            dot = np.clip(np.dot(x0, x), -1.0, 1.0)
+            # Use numerically stable formula for small angles: theta = 2 * arcsin(||x - x0|| / 2)
+            # This is more accurate than arccos when dot ≈ 1.0
+            chord_dist = np.linalg.norm(x - x0)
+            theta = 2.0 * np.arcsin(np.clip(chord_dist / 2.0, 0.0, 1.0))
+            # Safely format dot and theta (could be arrays or scalars)
+            dot_val = float(dot) if np.isscalar(dot) else float(np.mean(dot))
+            theta_val = float(theta) if np.isscalar(theta) else float(np.mean(theta))
+            logging.debug(f"log_map_sphere (single): dot={dot_val:.6f}, theta={theta_val:.6e}, theta_tol={theta_identical_tol:.6e}")
+            # Use the actual scalar value for comparison
+            theta_scalar = float(theta) if np.isscalar(theta) else float(np.max(np.abs(theta)))
+            if theta_scalar < theta_identical_tol:
+                logging.debug(f"log_map_sphere (single): Points are identical (theta={theta_scalar:.6e} < {theta_identical_tol:.6e}), returning zero vector")
+                return np.zeros_like(x0)
+            if np.isclose(dot, -1.0, atol=antipodal_tol, rtol=0):
+                # Antipodal: direction undefined, choose arbitrary tangent direction with norm=pi
+                # Find an orthogonal direction
+                D = len(x0)
+                if abs(x0[0]) < 0.9:
+                    v_dir = np.zeros_like(x0)
+                    v_dir[0] = 1.0
+                else:
+                    v_dir = np.zeros_like(x0)
+                    v_dir[1] = 1.0
+                # Make it orthogonal to x0
+                v_dir = v_dir - np.dot(v_dir, x0) * x0
+                v_dir = v_dir / (np.linalg.norm(v_dir) + eps)
+                return np.pi * v_dir
+            v_dir = x - dot * x0
+            v_dir_norm = np.linalg.norm(v_dir)
+            logging.debug(f"log_map_sphere (single): v_dir_norm={v_dir_norm:.6e}")
+            if v_dir_norm < theta_identical_tol:
+                logging.debug(f"log_map_sphere (single): v_dir_norm too small ({v_dir_norm:.9e}), returning zero vector")
+                return np.zeros_like(x0)
+            v_dir = v_dir / v_dir_norm
+            result = theta * v_dir
+            # Scale by sphere radius (7.0) to get actual spherical distance
+            # Unit sphere calculations give angles; multiply by radius for arc length
+            sphere_radius = 7.0
+            result = result * sphere_radius
+            logging.debug(f"log_map_sphere (single): result norm={np.linalg.norm(result):.6f} (scaled by radius={sphere_radius})")
+            return result
+        # Batch/mixed case: ensure both operands broadcast to (n, D)
+        if x.ndim == 1:
+            x_mat = x[np.newaxis, :]
+        else:
+            x_mat = x
+        if x0.ndim == 1:
+            x0_mat = x0[np.newaxis, :]
+        else:
+            x0_mat = x0
+
+        # Determine target batch size and broadcast as needed
+        n = max(x_mat.shape[0], x0_mat.shape[0])
+        D = x_mat.shape[1] if x_mat.ndim == 2 else x_mat.shape[-1]
+
+        if x_mat.shape[0] != n:
+            x_mat = np.broadcast_to(x_mat, (n, D))
+        if x0_mat.shape[0] != n:
+            x0_mat = np.broadcast_to(x0_mat, (n, D))
+
+        dot = np.sum(x0_mat * x_mat, axis=1)
+        dot = np.clip(dot, -1.0, 1.0)
+        # Use numerically stable formula for small angles: theta = 2 * arcsin(||x - x0|| / 2)
+        chord_dist = np.linalg.norm(x_mat - x0_mat, axis=1)
+        theta = 2.0 * np.arcsin(np.clip(chord_dist / 2.0, 0.0, 1.0))
+        mask_identical = theta < theta_identical_tol
+        mask_antipodal = np.isclose(dot, -1.0, atol=antipodal_tol, rtol=0)
+        v_dir = x_mat - dot[:, None] * x0_mat
+        v_dir_norm = np.linalg.norm(v_dir, axis=1)
+        v = np.zeros_like(x_mat)
+        mask = ~(mask_identical | mask_antipodal | (v_dir_norm < theta_identical_tol))
+        logging.debug(f"log_map_sphere (batch): n={n}, identical={mask_identical.sum()}, antipodal={mask_antipodal.sum()}, valid={mask.sum()}")
+        logging.debug(f"log_map_sphere (batch): dot range=[{dot.min():.6f}, {dot.max():.6f}], theta range=[{theta.min():.6e}, {theta.max():.6e}]")
+        logging.debug(f"log_map_sphere (batch): v_dir_norm range=[{v_dir_norm.min():.9e}, {v_dir_norm.max():.6e}]")
+        v[mask] = theta[mask][:, None] * (v_dir[mask] / (v_dir_norm[mask][:, None] + theta_identical_tol))
+        # For antipodal points, choose arbitrary tangent direction with norm=pi
+        if np.any(mask_antipodal):
+            for i in np.where(mask_antipodal)[0]:
+                if abs(x0_mat[i, 0]) < 0.9:
+                    v_dir_ant = np.zeros(D)
+                    v_dir_ant[0] = 1.0
+                else:
+                    v_dir_ant = np.zeros(D)
+                    v_dir_ant[1] = 1.0
+                v_dir_ant = v_dir_ant - np.dot(v_dir_ant, x0_mat[i]) * x0_mat[i]
+                v_dir_ant = v_dir_ant / (np.linalg.norm(v_dir_ant) + eps)
+                v[i] = np.pi * v_dir_ant
+        # For identical, keep zero vector
+        # Scale by sphere radius (7.0) to get actual spherical distances
+        sphere_radius = 7.0
+        v = v * sphere_radius
+        return v
+
+    def local_distance_sphere(self, x0, x, batch_size=256):
+        """
+        Compute local spherical distance(s) between x0 and x.
+
+        If x is a batched array, returns a 1D numpy array of distances; otherwise
+        returns a scalar float for a single pair of vectors. Uses `log_map_sphere`
+        under the hood and supports chunked processing.
+        """
+        x0 = np.asarray(x0, dtype=float)
+        x = np.asarray(x, dtype=float)
+        
+        # Single vector case: compute distance directly using log_map
+        if x.ndim == 1:
+            v_log = self.log_map_sphere(x0, x)
+            return np.linalg.norm(v_log)
+        
+        # Batch case: use log_map_sphere to get tangent vectors, then compute norms
+        n, D = x.shape
+        v_logs = self.log_map_sphere(x0, x)  # Returns (n, D) array of tangent vectors
+        distances = np.linalg.norm(v_logs, axis=1)  # Compute norm of each tangent vector
+        return distances
+
+    def parallel_transport_sphere(self, x_from, x_to, v, eps=1e-7, batch_size=256):
+        """
+        Parallel transport tangent vector(s) v in T_{x_from}S^{n-1} to T_{x_to}S^{n-1}.
+
+        Supports single-vector and batched inputs. When batched, all inputs may be
+        provided as (N, D) arrays, or x_from/x_to may be provided as (D,) and will
+        be broadcast to the batch.
+        """
+        x_from = np.asarray(x_from, dtype=float)
+        x_to = np.asarray(x_to, dtype=float)
+        v = np.asarray(v, dtype=float)
+        v_norm_str = f"{np.linalg.norm(v):.6f}" if v.ndim == 1 else f"{np.linalg.norm(v, axis=1).mean():.6f}"
+        logging.debug(f"parallel_transport_sphere: x_from shape={x_from.shape}, x_to shape={x_to.shape}, v shape={v.shape}, v norm={v_norm_str}")
+        if x_from.ndim == 1 and x_to.ndim == 1 and v.ndim == 1:
+            dot = np.clip(np.dot(x_from, x_to), -1.0, 1.0)
+            # Use theta-based tolerance consistent with log_map_sphere
+            theta_identical_tol = max(1e-12, eps)
+            antipodal_tol = max(1e-9, eps * 10)
+            theta = np.arccos(dot)
+            if theta < theta_identical_tol:
+                # Identical points: return original vector unchanged
+                return v.copy()
+            if np.isclose(dot, -1.0, atol=antipodal_tol, rtol=0):
+                # Antipodal: project to tangent space
+                v_tan = v - np.dot(v, x_from) * x_from
+                return v_tan
+            theta = math.acos(dot)
+            sin_theta = math.sin(theta)
+            k_from = (x_to - dot * x_from) / (sin_theta + eps)
+            k_to = (x_from - dot * x_to) / (sin_theta + eps)
+            a = float(np.dot(v, k_from))
+            v_perp = v - a * k_from
+            transported = a * k_to + v_perp
+            # Preserve norm exactly
+            original_norm = np.linalg.norm(v)
+            transported_norm = np.linalg.norm(transported)
+            if transported_norm > eps:
+                transported = transported * (original_norm / transported_norm)
+            return transported
+        n, D = v.shape if v.ndim == 2 else (1, v.shape[0])
+        if x_from.ndim == 1:
+            x_from_mat = np.broadcast_to(x_from, (n, D)).astype(float)
+        else:
+            x_from_mat = x_from.astype(float)
+        if x_to.ndim == 1:
+            x_to_mat = np.broadcast_to(x_to, (n, D)).astype(float)
+        else:
+            x_to_mat = x_to.astype(float)
+        dot = np.sum(x_from_mat * x_to_mat, axis=1)
+        # Use theta-based tolerance consistent with log_map_sphere
+        theta_identical_tol = max(1e-12, eps)
+        antipodal_tol = max(1e-9, eps * 10)
+        dot_clipped = np.clip(dot, -1.0, 1.0)
+        theta = np.arccos(dot_clipped)
+        mask_id = theta < theta_identical_tol
+        mask_ant = np.isclose(dot, -1.0, atol=antipodal_tol, rtol=0)
+        transported = np.zeros_like(v)
+        mask = ~(mask_id | mask_ant)
+        # For identical points, return original vector
+        transported[mask_id] = v[mask_id].copy()
+        # For antipodal, project to tangent space
+        if np.any(mask_ant):
+            v_tan = v[mask_ant] - np.sum(v[mask_ant] * x_from_mat[mask_ant], axis=1)[:, None] * x_from_mat[mask_ant]
+            transported[mask_ant] = v_tan
+        # For others, use rotation
+        if np.any(mask):
+            theta = np.arccos(dot[mask])
+            sin_theta = np.sin(theta)
+            xf = x_from_mat[mask]
+            xt = x_to_mat[mask]
+            vv = v[mask]
+            k_from = (xt - dot[mask][:, None] * xf) / (sin_theta[:, None] + eps)
+            k_to = (xf - dot[mask][:, None] * xt) / (sin_theta[:, None] + eps)
+            a = np.sum(vv * k_from, axis=1)
+            v_perp = vv - a[:, None] * k_from
+            transported[mask] = a[:, None] * k_to + v_perp
+            # Preserve norms exactly for normal cases
+            original_norms = np.linalg.norm(vv, axis=1)
+            transported_norms = np.linalg.norm(transported[mask], axis=1)
+            valid = transported_norms > eps
+            if np.any(valid):
+                scale_factors = original_norms[valid] / transported_norms[valid]
+                transported[np.where(mask)[0][valid]] *= scale_factors[:, None]
+        return transported
+
+    def exp_map_sphere(self, x0, v, eps=1e-9):
+        """Exponential map on the unit sphere: maps tangent vector v at x0 to a point on the sphere."""
+        x0 = np.asarray(x0, dtype=float)
+        v = np.asarray(v, dtype=float)
+        norm_v = np.linalg.norm(v)
+        if norm_v < eps:
+            return x0.copy()
+        return np.cos(norm_v) * x0 + np.sin(norm_v) * (v / norm_v)
+
+   
     
     def _generate_matrix_coordinates(self, matrix, matrix_idx):
         """
@@ -6855,101 +7277,106 @@ class MatrixTransformer:
                 pass  # Use zeros if even basic stats fail
             
             return feature_vector
-    
-    def find_hyperdimensional_connections(self, num_dims=8):
-        """Find connections in hyperdimensional space between matrices and tensors."""
-        import logging
-        
-        logging.info(f"Finding hyperdimensional connections in {num_dims}D space...")
-        
-        # Initialize the attribute regardless of outcome
-        self.hyperdimensional_connections = {}
-        
-        # Handle case where matrices attribute doesn't exist or is not a list
-        if not hasattr(self, 'matrices'):
-            self.matrices = []
-            return self.hyperdimensional_connections
-        
-        if not isinstance(self.matrices, list):
-            logging.warning("matrices attribute is not a list, returning empty connections")
-            return self.hyperdimensional_connections
-        
-        # Filter out invalid matrices (None, non-array types, etc.)
-        valid_matrices = []
-        valid_indices = []
-        
-        for i, matrix in enumerate(self.matrices):
-            try:
-                if matrix is None:
-                    continue
-                
-                # Check if it's a valid matrix/tensor type
-                if isinstance(matrix, torch.Tensor):
-                    matrix_np = matrix.detach().cpu().numpy()
-                elif isinstance(matrix, np.ndarray):
-                    matrix_np = matrix
-                elif hasattr(matrix, 'toarray'):  # Sparse matrix
-                    matrix_np = matrix.toarray()
-                elif hasattr(matrix, 'todense'):  # Another sparse matrix format
-                    matrix_np = matrix.todense()
-                else:
-                    # Skip invalid types (strings, etc.)
-                    continue
-                
-                # Check for empty or invalid matrices
-                if matrix_np.size == 0:
-                    continue
-                    
-                # Check for NaN or Inf values
-                if np.any(np.isnan(matrix_np)) or np.any(np.isinf(matrix_np)):
-                    continue
-                
-                valid_matrices.append(matrix_np)
-                valid_indices.append(i)
-                
-            except Exception as e:
-                logging.warning(f"Skipping invalid matrix at index {i}: {e}")
-                continue
-        
-        # Handle empty or insufficient matrices
-        if not valid_matrices:
-            logging.info("No valid matrices found for hyperdimensional connections")
-            return self.hyperdimensional_connections
-        
-        if len(valid_matrices) == 1:
-            # Single matrix case - create entry with empty connections
-            self.hyperdimensional_connections[valid_indices[0]] = []
-            return self.hyperdimensional_connections
-        
-        # Generate coordinates for each valid matrix with error handling
-        coords3d = []
-        for i, matrix_np in enumerate(valid_matrices):
-            try:
-                coords = self._generate_matrix_coordinates_safe(matrix_np, valid_indices[i])
-                coords3d.append(coords)
-            except Exception as e:
-                logging.warning(f"Failed to generate coordinates for matrix {valid_indices[i]}: {e}")
-                # Use default coordinates
-                coords3d.append(np.array([0.5, 0.5, 0.5]))
-        
-        coords3d = np.array(coords3d)
-        
-        # Extract features for each matrix with batch processing and error handling
+
+    def _extract_feature_vector(self, matrix, num_dims):
+        """Extract a feature vector of length num_dims from a matrix or tensor.
+
+        This function returns simple, deterministic features: mean, std, median(|x|), percentile 90,
+        sparsity ratio, and (if square) basic eigenvalue stats. Any missing values are filled with defaults.
+        """
+        try:
+            if hasattr(matrix, 'detach'):
+                matrix_np = matrix.detach().cpu().numpy()
+            else:
+                matrix_np = np.asarray(matrix)
+        except Exception:
+            matrix_np = np.asarray(matrix)
+
+        flat_values = matrix_np.flatten() if matrix_np.size > 0 else np.array([0.0])
         features = []
-        batch_size = 100  # Process matrices in batches
+        try:
+            # Basic statistics
+            features.append(float(np.mean(flat_values)))
+            features.append(float(np.std(flat_values)))
+            features.append(float(np.median(np.abs(flat_values))))
+            features.append(float(np.percentile(flat_values, 90)))
+            # sparsity: fraction of near-zero entries
+            features.append(float(np.sum(np.abs(flat_values) < 1e-10) / max(1, flat_values.size)))
+
+            # Structural properties: symmetry score and eigen stats when square
+            symmetry = 0.0
+            eig_mean = 0.0
+            eig_std = 0.0
+            try:
+                if matrix_np.ndim == 2 and matrix_np.shape[0] == matrix_np.shape[1] and matrix_np.size > 0:
+                    # symmetry score: 1 - normalized Frobenius norm of (A - A.T)
+                    diff = matrix_np - matrix_np.T.conj()
+                    denom = np.linalg.norm(matrix_np) + 1e-12
+                    symmetry = float(1.0 - min(1.0, np.linalg.norm(diff) / denom))
+                    eigvals = np.linalg.eigvals(matrix_np)
+                    eig_mean = float(np.mean(np.abs(eigvals)))
+                    eig_std = float(np.std(np.abs(eigvals)))
+                else:
+                    # For non-square matrices use SVD singular values as proxy
+                    if matrix_np.ndim == 2 and matrix_np.size > 0:
+                        try:
+                            s = np.linalg.svd(matrix_np, compute_uv=False)
+                            eig_mean = float(np.mean(np.abs(s)))
+                            eig_std = float(np.std(np.abs(s)))
+                        except Exception:
+                            eig_mean = 0.0
+                            eig_std = 0.0
+                    else:
+                        eig_mean = float(np.mean(np.abs(flat_values)))
+                        eig_std = float(np.std(np.abs(flat_values)))
+            except Exception:
+                symmetry = 0.0
+                eig_mean = float(np.mean(np.abs(flat_values)))
+                eig_std = float(np.std(np.abs(flat_values)))
+
+            features.append(symmetry)
+            features.append(eig_mean)
+            features.append(eig_std)
+
+        except Exception:
+            # fallback: modest default vector
+            features = [0.5] * max(7, num_dims)
+
+        min_len = max(8, num_dims)
+        if len(features) < min_len:
+            features.extend([0.0] * (min_len - len(features)))
+        return np.array(features[:min_len], dtype=float)
+    
+    def _batch_project_and_extract_features(self, valid_matrices, valid_indices, num_dims, batch_size, valid_matrix_types=None):
+        """Generator that yields batches of extracted features from projected matrices.
+        
+        This streaming approach reduces memory usage by processing and yielding results
+        incrementally instead of holding all projections in memory at once.
+        
+        Args:
+            valid_matrices: List of numpy arrays to process
+            valid_indices: Corresponding original indices
+            num_dims: Target feature dimensionality
+            batch_size: Number of matrices to process per batch
+            
+        Yields:
+            List of feature vectors for each batch
+        """
+        import logging
         
         for i in range(0, len(valid_matrices), batch_size):
             batch_end = min(i + batch_size, len(valid_matrices))
             batch_features = []
+            batch_projections = []  # Store projections for batch coherence calculation
             
+            # First pass: project all matrices in batch
             for j in range(i, batch_end):
                 try:
                     # Get matrix directly from valid matrices list
                     mat = valid_matrices[j]
                     
-                    # FIX: Handle complex matrices by taking real part or magnitude
+                    # Handle complex matrices by taking real part or magnitude
                     if np.iscomplexobj(mat):
-                        # For complex matrices, use magnitude for feature extraction
                         mat = np.abs(mat)
                     
                     # Ensure mat is at least 2D
@@ -6965,7 +7392,7 @@ class MatrixTransformer:
                             try:
                                 mat_2d, _ = self.tensor_to_matrix(mat)
                                 # Project the 2D representation to hypersphere
-                                proj = self._project_to_hypersphere(mat_2d, radius=1.0, preserve_type=False)
+                                proj = self._project_to_hypersphere(mat_2d, radius=7, preserve_type=False)
                             except Exception:
                                 # Fallback: flatten to 1D and reshape to approximate square
                                 flat = mat.flatten()
@@ -6979,16 +7406,36 @@ class MatrixTransformer:
                             padded = np.pad(flat, (0, side*side - len(flat)), mode='constant')
                             proj = padded.reshape(side, side)
                     else:
-                        # For matrices, project directly
-                        proj = self._project_to_hypersphere(mat, radius=1.0, preserve_type=False)
+                            # For matrices, project directly
+                            proj = self._project_to_hypersphere(mat, radius=7, preserve_type=False)
                     
+                    batch_projections.append(proj)
+                    
+                except Exception as e:
+                    logging.error(f"Error projecting matrix {valid_indices[j] if j < len(valid_indices) else j}: {e}")
+                    batch_projections.append(np.array([[0.0]]))  # Fallback projection
+            
+            # Second pass: batch calculate coherence for all projections
+            coherence_map = {}
+            if hasattr(self, 'calculate_matrix_coherence_batch'):
+                try:
+                    for local_idx, coherence in self.calculate_matrix_coherence_batch(
+                        batch_projections, return_components=False, batch_size=100
+                    ):
+                        coherence_map[local_idx] = coherence
+                except Exception as e:
+                    logging.warning(f"Batch coherence calculation failed: {e}, falling back to individual calculation")
+            
+            # Third pass: extract features from projections and include structural features
+            for local_idx, proj in enumerate(batch_projections):
+                try:
                     # Extract key statistical features efficiently from the projected matrix
                     feature_vector = []
                     
                     # Use projected matrix for feature extraction
                     proj_flat = proj.flatten() if hasattr(proj, 'flatten') else np.array([proj]).flatten()
                     
-                    # FIX: Ensure all features are real numbers
+                    # Ensure all features are real numbers
                     if np.iscomplexobj(proj_flat):
                         proj_flat = np.abs(proj_flat)
                     
@@ -7011,8 +7458,10 @@ class MatrixTransformer:
                     
                     # Additional hypersphere-specific features
                     if hasattr(proj, 'shape') and len(proj.shape) >= 2:
-                        # Matrix coherence on projected matrix
-                        if hasattr(self, 'calculate_matrix_coherence'):
+                        # Use pre-calculated coherence from batch processing
+                        if local_idx in coherence_map:
+                            coherence = coherence_map[local_idx]
+                        elif hasattr(self, 'calculate_matrix_coherence'):
                             try:
                                 coherence = self.calculate_matrix_coherence(proj)
                             except Exception:
@@ -7026,151 +7475,75 @@ class MatrixTransformer:
                         feature_vector.append(energy_density)
                     else:
                         feature_vector.extend([0.5, 1.0])  # Default values
+
+                    # Add structural features from extract_matrix_structure if matrix types are available
+                    try:
+                        # Determine global index of this local matrix
+                        global_index = i + local_idx
+                        mtype_enum = None
+                        if valid_matrix_types is not None and global_index < len(valid_matrix_types):
+                            mtype_enum = valid_matrix_types[global_index]
+                        # Extract the structure for the projected matrix; pass detected matrix type if available
+                        struct = self.extract_matrix_structure(proj, matrix_type=mtype_enum) if hasattr(self, 'extract_matrix_structure') else None
+                        if struct and isinstance(struct, dict):
+                            gprops = struct.get('global_properties', {})
+                            lprops = struct.get('local_relationships', {})
+                        else:
+                            gprops = {}
+                            lprops = {}
+                        # Normalized ordinal for matrix type
+                        try:
+                            mt_val = float(mtype_enum.value) if isinstance(mtype_enum, MatrixType) else 0.0
+                            mt_norm = mt_val / float(len(MatrixType))
+                        except Exception:
+                            mt_norm = 0.0
+                        # energy normalized against projected values
+                        try:
+                            energy_val = float(gprops.get('energy', 0.0))
+                            energy_norm = energy_val / (np.linalg.norm(proj_flat) + 1e-9)
+                        except Exception:
+                            energy_norm = 0.0
+                        try:
+                            sparsity_val = float(gprops.get('sparsity', 0.0)) if 'sparsity' in gprops else 0.0
+                        except Exception:
+                            sparsity_val = 0.0
+                        try:
+                            sig_elems = len(lprops.get('significant_elements', [])) if isinstance(lprops, dict) else 0
+                            sig_elems_norm = float(sig_elems) / (proj.size + 1e-9)
+                        except Exception:
+                            sig_elems_norm = 0.0
+
+                        # Append structural-derived features
+                        feature_vector.extend([mt_norm, energy_norm, sparsity_val, sig_elems_norm])
+                    except Exception:
+                        # In case of any error during structure extraction, append defaults
+                        feature_vector.extend([0.0, 0.0, 0.0, 0.0])
+                    else:
+                        feature_vector.extend([0.5, 1.0])  # Default values
                     
                     # Ensure exactly num_dims features
                     if len(feature_vector) < num_dims:
                         feature_vector.extend([0.0] * (num_dims - len(feature_vector)))
                     feature_vector = feature_vector[:num_dims]
                     
-                    # FIX: Ensure all features are real and finite
+                    # Ensure all features are real and finite
                     feature_vector = [float(f) if np.isfinite(f) and np.isreal(f) else 0.0 for f in feature_vector]
                     
                     batch_features.append(feature_vector)
                     
                 except Exception as e:
-                    logging.error(f"Error processing matrix {valid_indices[j] if j < len(valid_indices) else j}: {e}")
+                    logging.error(f"Error extracting features from projection {local_idx}: {e}")
                     batch_features.append([0.0] * num_dims)
             
-            features.extend(batch_features)
-        
-        # Convert to numpy array and normalize with error handling
-        try:
-            features = np.array(features, dtype=np.float64)
+            # Clear batch projections from memory before yielding
+            del batch_projections
+            coherence_map.clear()
             
-            # Handle case where all features are zero
-            norms = np.linalg.norm(features, axis=1)
-            if np.all(norms < 1e-10):
-                # All features are zero, create minimal connections
-                for idx in valid_indices:
-                    self.hyperdimensional_connections[idx] = []
-                return self.hyperdimensional_connections
-            
-            # Add small epsilon to prevent division by zero
-            eps = 1e-10
-            norms = norms[:, np.newaxis] + eps
-            features = features / norms
-            
-        except Exception as e:
-            logging.error(f"Failed to process features: {e}")
-            # Return empty connections for all matrices
-            for idx in valid_indices:
-                self.hyperdimensional_connections[idx] = []
-            return self.hyperdimensional_connections
-        
-        # Find connections using efficient batch processing
-        connections = {}
-        batch_size_conn = min(1000, len(valid_indices))  # Adjust batch size based on data size
-        
-        for i in range(0, len(valid_indices), batch_size_conn):
-            batch_end = min(i + batch_size_conn, len(valid_indices))
-            batch_features = features[i:batch_end]
-            batch_indices = valid_indices[i:batch_end]
-            
-            # Calculate similarities for this batch efficiently
-            try:
-                similarities = np.dot(batch_features, features.T)
-            except Exception as e:
-                logging.warning(f"Failed to calculate similarities for batch {i}: {e}")
-                # Skip this batch
-                continue
-            
-            # Process similarities in this batch
-            for batch_idx, src_idx in enumerate(batch_indices):
-                targets = []
-                
-                try:
-                    similarity_row = similarities[batch_idx]
-                    
-                    # FIX: Add proper boolean handling for array comparisons
-                    # Find significant connections with explicit boolean handling
-                    if isinstance(similarity_row, np.ndarray) and similarity_row.size > 0:
-                        # Use np.where to safely handle array comparisons
-                        significant_mask = similarity_row > 0.5
-                        significant_indices = np.where(significant_mask)[0]
-                    else:
-                        # Handle scalar case
-                        significant_indices = [] if similarity_row <= 0.5 else [0]
-                    
-                except ValueError as e:
-                    # Fallback: convert to explicit boolean array operations
-                    try:
-                        # Convert similarity_row to array if it isn't already
-                        sim_array = np.asarray(similarity_row)
-                        # Use array operations to avoid ambiguous boolean evaluation
-                        significant_indices = np.flatnonzero(sim_array > 0.5)
-                    except Exception as inner_e:
-                        logging.warning(f"Could not process similarities for index {src_idx}: {inner_e}")
-                        significant_indices = []
-                
-                for tgt_idx in significant_indices:
-                    if tgt_idx != batch_idx + i:  # Skip self-connections
-                        try:
-                            # Ensure tgt_idx is within bounds
-                            if tgt_idx >= len(valid_indices):
-                                continue
-                                
-                            # Calculate physical distance using generated coordinates
-                            phys_dist = np.linalg.norm(coords3d[i + batch_idx] - coords3d[tgt_idx])
-                            
-                            # Safe similarity access with boolean handling
-                            if isinstance(similarity_row, np.ndarray) and similarity_row.size > tgt_idx:
-                                similarity_val = similarity_row[tgt_idx]
-                            elif isinstance(similarity_row, (int, float)):
-                                similarity_val = similarity_row
-                            else:
-                                similarity_val = 0.5  # Default fallback
-                            
-                            # Calculate hyperdimensional distance safely
-                            hd_dist = np.sqrt(2 * (1 - np.clip(similarity_val, -1, 1)))
-                            
-                            # Avoid division by zero
-                            if hd_dist < 1e-10:
-                                hd_dist = 1e-10
-                            
-                            # Calculate ratio
-                            ratio = phys_dist / hd_dist
-                            
-                            # Find dimensions that contributed most to the similarity
-                            try:
-                                feature_diff = features[i + batch_idx] - features[tgt_idx]
-                                significant_dimensions = np.argsort(np.abs(feature_diff))[-3:]
-                            except (IndexError, ValueError):
-                                significant_dimensions = [0, 1, 2]  # Default dimensions
-                            
-                            # Only include if ratio exceeds threshold
-                            if ratio > 5:
-                                targets.append({
-                                    "target_idx": valid_indices[tgt_idx],  # Use original index
-                                    "high_dim_dist": float(hd_dist),
-                                    "physical_dist": float(phys_dist),
-                                    "ratio": float(ratio),
-                                    "strength": float(similarity_val),
-                                    "dimensions": significant_dimensions.tolist()
-                                })
-                        except Exception as e:
-                            logging.warning(f"Could not process connection from {src_idx} to {valid_indices[tgt_idx] if tgt_idx < len(valid_indices) else tgt_idx}: {e}")
-                            continue
-                
-                if targets:
-                    connections[src_idx] = sorted(targets, key=lambda x: x["strength"], reverse=True)[:5]
-                else:
-                    connections[src_idx] = []
-        
-        # Store results in MatrixTransformer's own attributes
-        self.hyperdimensional_connections = connections
-
-        logging.info(f"Found hyperdimensional connections for {len(connections)} matrices")
-        return connections
+            # Yield this batch's features and allow garbage collection
+            yield batch_features
+            del batch_features
+    
+   
                                         
 
     def connections_to_matrix(self, connections, coords3d=None, indices=None, matrix_type=None):
@@ -7341,7 +7714,7 @@ class MatrixTransformer:
                 if i < len(coords3d):
                     try:
                         # Convert coordinates to list for JSON serialization
-                        spatial_data[str(i)] = coords3d[i].tolist()
+                        spatial_data[str(i)] = coords_mmap[i].tolist()
                     except (IndexError, AttributeError):
                         pass
             metadata['spatial_data'] = spatial_data
@@ -7576,6 +7949,155 @@ class MatrixTransformer:
 
 
          
+    def calculate_matrix_coherence_batch(self, matrices, return_components=False, batch_size=100):
+        """Calculate coherence for multiple matrices with batch processing and yield.
+        
+        Args:
+            matrices: List or iterable of matrices to process
+            return_components: Whether to return coherence components
+            batch_size: Number of matrices to process in each batch
+            
+        Yields:
+            For each matrix: (index, coherence) or (index, coherence, components) if return_components=True
+        """
+        def _coerce_to_numpy(x):
+            try:
+                if isinstance(x, torch.Tensor):
+                    return x.detach().cpu().numpy()
+                if isinstance(x, np.ndarray):
+                    return x
+                if isinstance(x, (list, tuple)):
+                    return np.array(x)
+                if isinstance(x, dict):
+                    if 'data' in x:
+                        try:
+                            return np.array(x['data'])
+                        except Exception:
+                            pass
+                    for key in ('array', 'values', 'matrix', 'numpy_array'):
+                        if key in x:
+                            try:
+                                return np.array(x[key])
+                            except Exception:
+                                pass
+                    return np.array([])
+                return np.array(x)
+            except Exception:
+                return np.array([])
+        
+        def _calculate_single(matrix_np):
+            """Calculate coherence for a single matrix."""
+            # Scalars or un-coercible inputs -> default coherence
+            if matrix_np.size == 0:
+                return 0.5, {'state_coherence': 0.0, 'structural_coherence': 0.0, 'eigenvalue_coherence': 0.0}
+            
+            # If coercion produced an object-dtype array, try to convert to numeric
+            try:
+                if matrix_np.dtype == object or not np.issubdtype(getattr(matrix_np, 'dtype', np.dtype(float)), np.number):
+                    matrix_np = np.asarray(matrix_np, dtype=np.float64)
+            except Exception:
+                return 0.5, {'state_coherence': 0.0, 'structural_coherence': 0.0, 'eigenvalue_coherence': 0.0}
+            
+            components = {
+                'state_coherence': 0.0,
+                'structural_coherence': 0.0,
+                'eigenvalue_coherence': 0.0
+            }
+            
+            # Handle different matrix dimensions
+            if matrix_np.ndim <= 1:
+                if matrix_np.dtype == bool:
+                    components['state_coherence'] = 0.5
+                else:
+                    components['state_coherence'] = 1.0 - np.std(matrix_np) / (np.mean(np.abs(matrix_np)) + 1e-10)
+            
+            elif matrix_np.ndim == 2:
+                try:
+                    matrix_for_calc = matrix_np.astype(np.float64) if matrix_np.dtype == bool else matrix_np.astype(np.float64)
+                    
+                    u, s, vh = np.linalg.svd(matrix_for_calc, full_matrices=False)
+                    total_variance = np.sum(s**2)
+                    
+                    if total_variance > 0:
+                        s_normalized = s**2 / total_variance
+                        entropy = -np.sum(s_normalized * np.log2(s_normalized + 1e-10))
+                        max_entropy = np.log2(len(s))
+                        components['eigenvalue_coherence'] = 1.0 - entropy / (max_entropy + 1e-10)
+                    
+                    if matrix_for_calc.shape[0] == matrix_for_calc.shape[1]:
+                        if matrix_np.dtype == bool:
+                            symmetry_diff = np.logical_xor(matrix_np, matrix_np.T)
+                            symmetry = 1.0 - (np.sum(symmetry_diff) / matrix_np.size)
+                        else:
+                            symmetry = np.linalg.norm(matrix_for_calc - matrix_for_calc.T) / (np.linalg.norm(matrix_for_calc) + 1e-10)
+                            symmetry = 1.0 - symmetry
+                        components['structural_coherence'] = max(0.0, min(1.0, symmetry))
+                except Exception:
+                    components['eigenvalue_coherence'] = 0.5
+                    components['structural_coherence'] = 0.5
+            
+            else:
+                reshaped = matrix_np.reshape(-1, matrix_np.shape[-1])
+                try:
+                    if matrix_np.dtype == bool:
+                        components['state_coherence'] = 0.5
+                    else:
+                        variances = np.var(reshaped, axis=0)
+                        avg_variance = np.mean(variances)
+                        max_variance = np.max(variances)
+                        components['state_coherence'] = 1.0 - avg_variance / (max_variance + 1e-10)
+                except Exception:
+                    components['state_coherence'] = 0.5
+            
+            def _safe_float(x, default=0.5):
+                try:
+                    return float(x)
+                except Exception:
+                    return float(default)
+            
+            s_c = _safe_float(components.get('state_coherence', 0.5), 0.5)
+            str_c = _safe_float(components.get('structural_coherence', 0.5), 0.5)
+            eig_c = _safe_float(components.get('eigenvalue_coherence', 0.5), 0.5)
+            
+            overall_coherence = 0.4 * s_c + 0.3 * str_c + 0.3 * eig_c
+            
+            if np.isnan(overall_coherence) or np.isinf(overall_coherence):
+                overall_coherence = 0.5
+            
+            overall_coherence = np.clip(overall_coherence, 0.0, 1.0)
+            
+            return float(overall_coherence), components
+        
+        # Process matrices in batches
+        batch = []
+        for idx, matrix in enumerate(matrices):
+            batch.append((idx, matrix))
+            
+            if len(batch) >= batch_size:
+                # Process current batch
+                for batch_idx, mat in batch:
+                    matrix_np = _coerce_to_numpy(mat)
+                    coherence, components = _calculate_single(matrix_np)
+                    
+                    if return_components:
+                        yield batch_idx, coherence, components
+                    else:
+                        yield batch_idx, coherence
+                
+                # Clear batch to free memory
+                batch = []
+        
+        # Process remaining items
+        if batch:
+            for batch_idx, mat in batch:
+                matrix_np = _coerce_to_numpy(mat)
+                coherence, components = _calculate_single(matrix_np)
+                
+                if return_components:
+                    yield batch_idx, coherence, components
+                else:
+                    yield batch_idx, coherence
+    
     def calculate_matrix_coherence(self, matrix, return_components=False):
         """Calculate coherence for any matrix type (numpy array or tensor)."""
         # Defensive coercion: normalize common non-array inputs (dicts/lists/tuples)
@@ -7949,1106 +8471,6 @@ class MatrixTransformer:
             
         return embedding
         
-
-
-    def compute_hypercube_attention(self, query_matrix, key_matrices=None, value_matrices=None,
-                               mask=None, num_heads=4, dropout_rate=0.1, update_field=True,
-                               field_learning_rate=1.0, reset_field=False, min_coherence_threshold=0.4):
-        """
-        Compute attention over hypercube space, allowing transformations to focus on different regions.
-        Enhanced with tensor_to_matrix and matrix_to_tensor operations for proper shape handling.
-        
-        This is a multi-head attention mechanism adapted for matrix transformation operations.
-        
-        Args:
-            query_matrix: The input query matrix
-            key_matrices: Optional list of key matrices (lazy loaded if None)
-            value_matrices: Optional list of value matrices (lazy loaded if None)
-            mask: Optional attention mask
-            num_heads: Number of attention heads to use
-            dropout_rate: Dropout probability for regularization
-            update_field: Whether to update quantum field after attention computation
-            field_learning_rate: Learning rate for quantum field updates (0.0-1.0)
-            reset_field: Whether to reset the quantum field state before computation
-            
-            min_coherence_threshold: Minimum coherence threshold for field updates
-
-        Returns:
-            tuple: (Attention output, attention scores)
-        """
-        # Validate query matrix
-        if query_matrix is None:
-            raise ValueError("Query cannot be None")
-        
-        # Store original query information for reconstruction
-        original_query = query_matrix
-        is_torch_query = isinstance(query_matrix, torch.Tensor)
-        query_device = query_matrix.device if is_torch_query else None
-        
-        # Convert query to numpy for processing
-        if is_torch_query:
-            query_np = query_matrix.detach().cpu().numpy()
-        else:
-            query_np = np.array(query_matrix)
-        
-        # Store original query shape and metadata
-        original_query_shape = query_np.shape
-        original_query_ndim = query_np.ndim
-        query_tensor_metadata = None
-        
-        # Convert query to 2D matrix representation if needed
-        if query_np.ndim != 2:
-            query_2d, query_tensor_metadata = self.tensor_to_matrix(query_np)
-            query_matrix_2d = query_2d
-        else:
-            query_matrix_2d = query_np
-            
-        # Reset quantum field if requested
-        if reset_field:
-            # Ensure quantum field exists before resetting
-            if not hasattr(self, 'quantum_field'):
-                self.quantum_field = {}
-            
-            # Set exact values expected by the tests
-            self.quantum_field['dimensional_resonance'] = np.ones(8) * 0.5
-            self.quantum_field['phase_coherence'] = 0.5
-            self.quantum_field['temporal_stability'] = 0.5
-        
-        # Lazy load key/value matrices if not provided
-        if key_matrices is None or value_matrices is None:
-            # Use stored matrices if available
-            if hasattr(self, 'matrices') and self.matrices:
-                key_matrices = self.matrices[:min(5, len(self.matrices))]
-                value_matrices = key_matrices
-            else:
-                # No matrices available - return copy of query matrix immediately
-                if original_query_ndim != 2 and query_tensor_metadata:
-                    # Reconstruct original shape
-                    result = self.matrix_to_tensor(query_matrix_2d, query_tensor_metadata, 
-                                                original_shape=original_query_shape)
-                else:
-                    result = query_matrix_2d.copy()
-                
-                if is_torch_query:
-                    result = torch.tensor(result, device=query_device)
-                
-                return result, {}
-        
-        # Process value matrices to ensure they're all proper arrays
-        if value_matrices is None and key_matrices is not None:
-            value_matrices = key_matrices
-        
-        # Ensure key_matrices and value_matrices contain only numpy arrays, not dictionaries
-        processed_keys = []
-        processed_values = []
-        key_metadata_list = []
-        value_metadata_list = []
-        
-        for k in key_matrices:
-            if isinstance(k, dict) and 'matrix' in k:
-                k_matrix = k['matrix']
-            else:
-                k_matrix = k
-            
-            # Convert to numpy
-            if isinstance(k_matrix, torch.Tensor):
-                k_np = k_matrix.detach().cpu().numpy()
-            else:
-                k_np = np.array(k_matrix)
-            
-            # Convert to 2D if needed
-            k_metadata = None
-            if k_np.ndim != 2:
-                k_2d, k_metadata = self.tensor_to_matrix(k_np)
-                processed_keys.append(k_2d)
-            else:
-                processed_keys.append(k_np)
-            
-            key_metadata_list.append(k_metadata)
-        
-        # Do the same for value_matrices
-        for v in value_matrices:
-            if isinstance(v, dict) and 'matrix' in v:
-                v_matrix = v['matrix']
-            else:
-                v_matrix = v
-            
-            # Convert to numpy
-            if isinstance(v_matrix, torch.Tensor):
-                v_np = v_matrix.detach().cpu().numpy()
-            else:
-                v_np = np.array(v_matrix)
-            
-            # Convert to 2D if needed
-            v_metadata = None
-            if v_np.ndim != 2:
-                v_2d, v_metadata = self.tensor_to_matrix(v_np)
-                processed_values.append(v_2d)
-            else:
-                processed_values.append(v_np)
-            
-            value_metadata_list.append(v_metadata)
-        
-        key_matrices = processed_keys
-        value_matrices = processed_values
-        
-        # Ensure we have at least one key/value pair
-        if not key_matrices or not value_matrices:
-            # Return a deep copy of the query_matrix to avoid modifications
-            if original_query_ndim != 2 and query_tensor_metadata:
-                # Reconstruct original shape
-                result = self.matrix_to_tensor(query_matrix_2d, query_tensor_metadata, 
-                                            original_shape=original_query_shape)
-            else:
-                result = query_matrix_2d.copy()
-            
-            if is_torch_query:
-                result = torch.tensor(result, device=query_device)
-            
-            return result, {}
-        
-        # Detect matrix types for projection onto hypercube
-        query_type = self._detect_matrix_type(query_matrix_2d)
-        try:
-            query_coords = self._matrix_type_to_coordinates(query_type)
-        except Exception as e:
-            # Fallback to default coordinates on conversion failure
-            query_coords = np.ones(8) * 0.5
-            print(f"Coordinate conversion failed: {e}, using default coordinates")
-        
-        # Convert to numpy array if it's a tuple
-        if isinstance(query_coords, tuple):
-            query_coords = np.array(query_coords)
-        
-        # Lazily create positional encoding - only when needed
-        query_shape = query_matrix_2d.shape
-        pos_encoding = None
-        wavelet_encoding = None
-        
-        def get_position_encoding():
-            nonlocal pos_encoding
-            if pos_encoding is None:
-                if hasattr(self, 'create_position_encoding'):
-                    dim = max(query_shape[0] if len(query_shape) > 0 else 1, 
-                            query_shape[1] if len(query_shape) > 1 else 1)
-                    pos_encoding = self.create_position_encoding(
-                        dim, min(64, dim), 
-                        is_matrix=True, matrix=query_matrix_2d, 
-                        apply_field_effects=True, current_time=self.current_time
-                    )
-                    # Ensure it's flattened to 1D
-                    if hasattr(pos_encoding, 'flatten'):
-                        pos_encoding = pos_encoding.flatten()
-                else:
-                    # Create a simple fallback position encoding
-                    dim = max(query_shape[0] if len(query_shape) > 0 else 1, 
-                            query_shape[1] if len(query_shape) > 1 else 1)
-                    pos_encoding = np.zeros(min(8, dim))
-            return pos_encoding
-        
-        def get_wavelet_encoding():
-            nonlocal wavelet_encoding
-            if wavelet_encoding is None:
-                if hasattr(self, '_matrix_aware_wavelet'):
-                    dim = max(query_shape[0] if len(query_shape) > 0 else 1, 
-                            query_shape[1] if len(query_shape) > 1 else 1)
-                    wavelet_encoding = self._matrix_aware_wavelet(query_matrix_2d, self.current_time, min(64, dim))
-                    # Ensure it's flattened to 1D
-                    if hasattr(wavelet_encoding, 'flatten'):
-                        wavelet_encoding = wavelet_encoding.flatten()
-                else:
-                    # Create a simple fallback wavelet encoding
-                    dim = max(query_shape[0] if len(query_shape) > 0 else 1, 
-                            query_shape[1] if len(query_shape) > 1 else 1)
-                    wavelet_encoding = np.zeros(min(8, dim))
-            return wavelet_encoding
-        
-        # Project query using hypercube embedding
-        q_projection = None
-        if hasattr(self, 'cube') and query_coords is not None:
-            # Convert query_coords to tuple for lookup in cube
-            if isinstance(query_coords, np.ndarray):
-                query_coords_tuple = tuple(query_coords)
-            else:
-                query_coords_tuple = query_coords
-                
-            if query_coords_tuple in self.cube and 'sphere_embedding' in self.cube[query_coords_tuple]:
-                q_projection = self.cube[query_coords_tuple]['sphere_embedding']
-            else:
-                q_projection = np.ones(8) / np.sqrt(8)  # Default projection
-        else:
-            q_projection = np.ones(8) / np.sqrt(8)  # Default projection
-        
-        # Split into multiple attention heads with lazy tensor operations
-        head_dim = max(1, (query_shape[1] if len(query_shape) > 1 else query_shape[0]) // num_heads)
-        q_heads = []
-        k_heads_list = []
-        v_heads_list = []
-        
-        # Process query into heads
-        for head in range(num_heads):
-            # Combine different features for the query projection
-            head_pos_encoding = get_position_encoding()
-            head_wavelet = get_wavelet_encoding()
-            
-            # Flatten all arrays to 1D to ensure consistent shapes
-            q_proj_flat = np.array(q_projection).flatten()
-            pos_enc_flat = np.array(head_pos_encoding).flatten()
-            wavelet_flat = np.array(head_wavelet).flatten()
-            
-            # Debug: Log shapes to trace broadcasting issues
-            # print(f"[DEBUG] Head {head}: q_proj_flat.shape={q_proj_flat.shape}, pos_enc_flat.shape={pos_enc_flat.shape}, wavelet_flat.shape={wavelet_flat.shape}")
-            
-            # Ensure consistent dimensions for combination
-            min_dim = min(len(q_proj_flat), len(pos_enc_flat), len(wavelet_flat))
-            
-            # Create weighted combination of features
-            head_q_proj = (q_proj_flat[:min_dim] * 0.5 + 
-                        pos_enc_flat[:min_dim] * 0.3 + 
-                        wavelet_flat[:min_dim] * 0.2)
-            
-            # Add head-specific modulation
-            head_q_proj = head_q_proj * (1.0 + 0.1 * head / num_heads)
-            
-            # Normalize the projection
-            head_q_norm = np.linalg.norm(head_q_proj)
-            if head_q_norm > 1e-10:
-                head_q_proj = head_q_proj / head_q_norm
-                
-            q_heads.append(head_q_proj)
-        
-        # Store coordinates for each key matrix - FIX: Now properly stored and used
-        k_coords_list = []
-        
-        # Process keys and values with proper coordinate integration
-        for idx, (key_matrix, value_matrix) in enumerate(zip(key_matrices, value_matrices)):
-            k_type = self._detect_matrix_type(key_matrix)
-            try:
-                k_coords = self._matrix_type_to_coordinates(k_type)
-            except Exception as e:
-                # Fallback to default coordinates on conversion failure
-                k_coords = np.ones(8) * 0.5
-                print(f"Key coordinate conversion failed: {e}, using default coordinates")
-            
-            # Convert to numpy array if it's a tuple
-            if isinstance(k_coords, tuple):
-                k_coords = np.array(k_coords)
-            
-            k_coords_list.append(k_coords)  # ← FIX: NOW PROPERLY STORED
-            
-            # Use graph traversal to get path information
-            path, path_attention_scores, structure_metadata = self._traverse_graph(
-                key_matrix, k_type, [], update_field=(update_field and not reset_field))
-            
-            # Process each head for this key/value pair
-            k_heads = []
-            v_heads = []
-            
-            for head in range(num_heads):
-                # Use k_coords for projection - FIX: Now uses stored coordinates
-                if hasattr(self, 'cube') and k_coords is not None:
-                    # Convert k_coords to tuple for lookup in cube
-                    if isinstance(k_coords, np.ndarray):
-                        k_coords_tuple = tuple(k_coords)
-                    else:
-                        k_coords_tuple = k_coords
-                        
-                    if k_coords_tuple in self.cube and 'sphere_embedding' in self.cube[k_coords_tuple]:
-                        k_projection = self.cube[k_coords_tuple]['sphere_embedding']
-                    else:
-                        k_projection = np.ones(8) / np.sqrt(8)
-                else:
-                    k_projection = np.ones(8) / np.sqrt(8)
-                
-                # Head-specific modifications
-                head_k_proj = k_projection * (1.0 + 0.1 * head / num_heads)
-                head_k_norm = np.linalg.norm(head_k_proj)
-                if head_k_norm > 1e-10:
-                    head_k_proj = head_k_proj / head_k_norm
-                
-                # Enhanced key processing using ALL available structural information
-                # Use path information to modify keys based on hypercube geometry
-                path_influence = 0.2
-                if path:
-                    # Use path influence to modify k_head based on graph traversal
-                    for step_idx, step in enumerate(path):
-                        step_weight = 0.8 ** (step_idx + 1)  # Exponential decay of influence
-                        step_type_coords = self._matrix_type_to_coordinates(step)
-                        
-                        # Apply step coordinates influence to create geometric sensitivity
-                        if step_type_coords is not None:
-                            if isinstance(step_type_coords, (list, tuple, np.ndarray)):
-                                step_coord_influence = np.mean(step_type_coords)
-                            else:
-                                step_coord_influence = 0.5
-                            
-                            # Modify head projection based on path
-                            head_k_proj = (head_k_proj * (1.0 - path_influence * step_weight) + 
-                                        path_influence * step_weight * step_coord_influence * np.mean(head_k_proj))
-                
-                # Use structure metadata to further enhance key representation
-                if structure_metadata:
-                    # Extract type information for structural biasing
-                    matrix_structure = structure_metadata.get('matrix_structure', {})
-                    
-                    # Apply structural bias based on global properties
-                    global_props = matrix_structure.get('global_properties', {})
-                    if global_props:
-                        # Apply energy-based normalization if energy is available
-                        energy = global_props.get('energy', 0.0)
-                        if energy > 0:
-                            head_k_energy = np.linalg.norm(head_k_proj)
-                            if head_k_energy > 1e-10:
-                                energy_scale = min(2.0, energy / head_k_energy)
-                                head_k_proj *= energy_scale
-                
-                # Apply attention scores from graph traversal to key representation
-                if path_attention_scores:
-                    attention_mod = 0.0
-                    for type_name, score in path_attention_scores.items():
-                        attention_mod += score * 0.1
-                    
-                    # Apply modified attention to key
-                    if attention_mod > 0:
-                        head_k_proj = head_k_proj * (1.0 + attention_mod)
-                
-                k_heads.append(head_k_proj)
-                # Create value head as modified version of key head
-                v_heads.append(head_k_proj * 0.9)
-            
-            k_heads_list.append(k_heads)
-            v_heads_list.append(v_heads)
-        
-        # Compute attention scores using graph information and coordinate integration
-        attention_outputs = []
-        attention_weights = []
-
-        for head in range(num_heads):
-            q_head = q_heads[head]
-            
-            # Compute attention for this head across all key/value pairs
-            head_output = np.zeros_like(q_head)
-            head_weights = {}
-            
-            # Process each key/value pair for this head
-            for idx, (k_heads, v_heads) in enumerate(zip(k_heads_list, v_heads_list)):
-                k_head = k_heads[head]
-                v_head = v_heads[head]
-                k_coords = k_coords_list[idx]  # ← FIX: NOW PROPERLY USED
-                
-                # FIX: Coordinate-based attention calculation with shape compatibility
-                if k_coords is not None and query_coords is not None:
-                    # Ensure both coordinate arrays have the same length
-                    min_coord_len = min(len(k_coords), len(query_coords))
-                    k_coords_aligned = k_coords[:min_coord_len]
-                    query_coords_aligned = query_coords[:min_coord_len]
-                    
-                    coord_distance = np.linalg.norm(query_coords_aligned - k_coords_aligned)
-                    coord_attention = np.exp(-coord_distance)
-                else:
-                    coord_attention = 0.5  # Default if coordinates unavailable
-                
-                # FIX: Projection-based attention with proper shape handling
-                if len(q_head) > 0 and len(k_head) > 0:
-                    min_len = min(len(q_head), len(k_head))
-                    q_truncated = q_head[:min_len]
-                    k_truncated = k_head[:min_len]
-                    
-                    q_norm = np.linalg.norm(q_truncated)
-                    k_norm = np.linalg.norm(k_truncated)
-                    
-                    if q_norm > 1e-10 and k_norm > 1e-10:
-                        projection_similarity = np.dot(q_truncated, k_truncated) / (q_norm * k_norm)
-                    else:
-                        projection_similarity = 0.0
-                else:
-                    projection_similarity = 0.0
-                
-                # FIX: Combined scoring with coordinate integration
-                combined_score = 0.6 * projection_similarity + 0.4 * coord_attention
-                
-                # Apply mask if provided
-                if mask is not None and idx < len(mask):
-                    if mask[idx] == 0:
-                        combined_score = -1e9  # Large negative number to effectively zero out after softmax
-                
-                # Ensure combined_score is a scalar
-                if hasattr(combined_score, 'shape') and combined_score.size > 1:
-                    # If it's an array with multiple values, take the mean
-                    combined_score = np.mean(combined_score)
-                
-                # Store raw score
-                key_id = f"key_{idx}"
-                head_weights[key_id] = float(combined_score)
-            
-            # Apply softmax to scores
-            scores = np.array(list(head_weights.values()))
-            
-            # Apply dropout during training
-            if dropout_rate > 0:
-                dropout_mask = np.random.binomial(1, 1-dropout_rate, size=scores.shape)
-                scores = scores * dropout_mask
-            
-            # Normalize scores to sum to 1 (softmax)
-            if len(scores) > 0:
-                max_score = np.max(scores)
-                exp_scores = np.exp(scores - max_score)
-                sum_exp_scores = np.sum(exp_scores)
-                
-                if sum_exp_scores > 1e-10:
-                    norm_scores = exp_scores / sum_exp_scores
-                else:
-                    norm_scores = np.ones_like(scores) / len(scores)
-            else:
-                norm_scores = np.array([])
-            
-            # Apply normalized scores to values with proper shape handling
-            for idx, (v_heads, norm_score) in enumerate(zip(v_heads_list, norm_scores)):
-                v_head = v_heads[head]
-                
-                # Ensure v_head is compatible with head_output
-                if len(v_head) != len(head_output):
-                    # Resize v_head to match head_output
-                    min_len = min(len(v_head), len(head_output))
-                    v_head_resized = np.zeros_like(head_output)
-                    v_head_resized[:min_len] = v_head[:min_len]
-                    v_head = v_head_resized
-                
-                # Add weighted value to output
-                head_output += norm_score * v_head
-                
-                # Update normalized scores in head_weights
-                key_id = f"key_{idx}"
-                head_weights[key_id] = float(norm_score)
-            
-            attention_outputs.append(head_output)
-            attention_weights.append(head_weights)
-
-        # Combine attention heads with shape consistency
-        if attention_outputs:
-            if all(isinstance(o, np.ndarray) for o in attention_outputs):
-                # Check if all outputs have the same shape
-                if all(o.shape == attention_outputs[0].shape for o in attention_outputs):
-                    combined_output = np.mean(attention_outputs, axis=0)
-                else:
-                    # Reshape outputs to a common shape
-                    first_output = attention_outputs[0]
-                    combined_output = np.zeros_like(first_output)
-                    for output in attention_outputs:
-                        # Ensure compatible shape for addition
-                        if output.shape == first_output.shape:
-                            combined_output += output
-                        else:
-                            # Resize output to match first_output shape
-                            min_rows = min(output.shape[0], first_output.shape[0])
-                            min_cols = min(output.shape[1] if len(output.shape) > 1 else 1, 
-                                        first_output.shape[1] if len(first_output.shape) > 1 else 1)
-                            resized_output = np.zeros_like(first_output)
-                            if len(output.shape) == 1 and len(first_output.shape) == 1:
-                                resized_output[:min_rows] = output[:min_rows]
-                            elif len(output.shape) >= 2 and len(first_output.shape) >= 2:
-                                resized_output[:min_rows, :min_cols] = output[:min_rows, :min_cols]
-                            combined_output += resized_output
-                    combined_output /= num_heads
-            else:
-                # Fallback to returning the query
-                combined_output = query_matrix_2d
-        else:
-            combined_output = query_matrix_2d
-        
-        # Calculate overall attention weights
-        combined_weights = {}
-        for head_weight in attention_weights:
-            for key, value in head_weight.items():
-                if key not in combined_weights:
-                    combined_weights[key] = 0.0
-                combined_weights[key] += value / num_heads
-        
-        # Reconstruct original tensor shape if needed
-        if original_query_ndim != 2 and query_tensor_metadata:
-            try:
-                final_output = self.matrix_to_tensor(combined_output, query_tensor_metadata, 
-                                                original_shape=original_query_shape)
-            except Exception as e:
-                print(f"Warning: Tensor reconstruction failed: {e}, returning 2D matrix")
-                final_output = combined_output
-        else:
-            final_output = combined_output
-        
-        # Convert back to torch tensor if original was torch
-        if is_torch_query:
-            try:
-                final_output = torch.tensor(final_output, device=query_device)
-            except Exception as e:
-                print(f"Warning: Torch tensor conversion failed: {e}")
-                # Keep as numpy array
-        
-        # Update quantum field based on attention results if requested (but not when reset_field is True)
-        if update_field and field_learning_rate > 0 and hasattr(self, '_update_quantum_field') and not reset_field:
-            # Calculate coherence of combined output
-            output_coherence = 0.0
-            if hasattr(self, 'calculate_matrix_coherence'):
-                try:
-                    output_coherence = self.calculate_matrix_coherence(final_output)
-                except Exception as e:
-                    print(f"Coherence calculation failed in compute_hypercube_attention: {e}")
-                    output_coherence = 0.0
-            
-            # Only update if coherence is above threshold
-            if output_coherence >= min_coherence_threshold:
-                self._update_quantum_field(final_output, combined_weights, field_learning_rate)
-        
-        # Store the current matrix in memory cache for temporal sequence tracking
-        if hasattr(self, 'memory_cache'):
-            self.memory_cache.add_to_temporal_sequence(final_output, self.current_time)
-            
-        # Increment current time
-        self.current_time += 0.01
-                
-        return final_output, combined_weights
-            
-    
-    def hyperdimensional_attention(self, query, key, value, num_dims=8):
-        """
-        Apply hyperdimensional attention mechanism that leverages high-dimensional 
-        space for more robust pattern detection across different matrix types.
-        
-        Args:
-            query: Query matrix/tensor
-            key: Key matrix/tensor or list of matrices/tensors
-            value: Value matrix/tensor or list of matrices/tensors
-            num_dims: Number of dimensions for hyperdimensional space
-            
-        Returns:
-            tuple: (Attended output matrix/tensor, attention_weights)
-        """
-        try:
-            # Input validation and preprocessing
-            if query is None:
-                raise ValueError("Query cannot be None")
-            
-            # Convert torch tensors to numpy for processing
-            original_is_tensor = isinstance(query, torch.Tensor)
-            original_device = query.device if original_is_tensor else None
-            original_dtype = query.dtype if original_is_tensor else None
-            
-            if original_is_tensor:
-                query_np = query.detach().cpu().numpy()
-            else:
-                query_np = query.copy() if hasattr(query, 'copy') else np.array(query)
-            
-            # Handle empty or invalid query
-            if query_np.size == 0:
-                return query_np.copy(), []
-            
-            # 1. Hyperdimensional Projection Layer
-            try:
-                query_proj = self._project_to_hypersphere(query_np, radius=1.0, preserve_type=False)
-            except Exception as e:
-                logging.warning(f"Query projection failed: {e}, using original")
-                query_proj = query_np.copy()
-            
-            # Handle single vs multiple key/value pairs with validation
-            if key is None:
-                key = [query_np]
-                value = [query_np]
-            elif not isinstance(key, list):
-                key = [key]
-                if not isinstance(value, list):
-                    value = [value]
-                else:
-                    # Ensure value list matches key list length
-                    if len(value) != len(key):
-                        value = [value[0] if value else query_np] * len(key)
-            else:
-                if not isinstance(value, list):
-                    value = [value] * len(key)
-                elif len(value) != len(key):
-                    # Pad or truncate value list to match key list
-                    if len(value) < len(key):
-                        value.extend([value[-1] if value else query_np] * (len(key) - len(value)))
-                    else:
-                        value = value[:len(key)]
-            
-            # Convert key/value tensors to numpy and project to hypersphere
-            key_projs = []
-            value_arrays = []
-            
-            for k, v in zip(key, value):
-                try:
-                    # Skip None key/value pairs
-                    if k is None or v is None:
-                        continue
-                        
-                    # Convert key to numpy
-                    if isinstance(k, torch.Tensor):
-                        k_np = k.detach().cpu().numpy()
-                    else:
-                        k_np = k.copy() if hasattr(k, 'copy') else np.array(k)
-                    
-                    # Convert value to numpy  
-                    if isinstance(v, torch.Tensor):
-                        v_np = v.detach().cpu().numpy()
-                    else:
-                        v_np = v.copy() if hasattr(v, 'copy') else np.array(v)
-                    
-                    # Project key to hypersphere
-                    if k_np.size > 0:
-                        k_proj = self._project_to_hypersphere(k_np, radius=1.0, preserve_type=False)
-                        key_projs.append(k_proj)
-                        value_arrays.append(v_np)
-                    
-                except Exception as e:
-                    logging.warning(f"Failed to process key/value pair: {e}")
-                    continue
-            
-            # Ensure we have at least one valid key/value pair
-            if not key_projs:
-                logging.warning("No valid key/value pairs, returning query")
-                return query_np.copy(), [1.0]
-            
-            # Rest of the method remains the same...
-            # 2. Connection Discovery Engine
-            matrices_dict = {'q': query_proj}
-            for i, k in enumerate(key_projs):
-                matrices_dict[f'k{i}'] = k
-            
-            connections = {}
-            
-            # Find connections in high-dimensional space with error handling
-            for src_idx, src_matrix in matrices_dict.items():
-                connections[src_idx] = []
-                
-                try:
-                    # Extract feature vector for hyperdimensional comparison
-                    src_feat = self._extract_feature_vector(src_matrix, num_dims)
-                    
-                    for tgt_idx, tgt_matrix in matrices_dict.items():
-                        if src_idx == tgt_idx:
-                            continue
-                        
-                        try:
-                            # Extract target feature vector
-                            tgt_feat = self._extract_feature_vector(tgt_matrix, num_dims)
-                            
-                            # Calculate high-dimensional distance
-                            high_dim_dist = np.linalg.norm(src_feat - tgt_feat)
-                            
-                            # Calculate physical distance as energy difference
-                            physical_dist = abs(np.linalg.norm(src_matrix) - np.linalg.norm(tgt_matrix))
-                            
-                            # Calculate attention strength (inverse of distance with stability)
-                            strength = 1.0 / (high_dim_dist + 0.1)
-                            
-                            # Only record significant connections
-                            if strength > 0.1:
-                                connections[src_idx].append({
-                                    "target_idx": tgt_idx,
-                                    "high_dim_dist": float(high_dim_dist),
-                                    "physical_dist": float(physical_dist),
-                                    "ratio": float(physical_dist / (high_dim_dist + 1e-10)),
-                                    "strength": float(strength)
-                                })
-                        except Exception as e:
-                            logging.warning(f"Failed to compute connection {src_idx}->{tgt_idx}: {e}")
-                            continue
-                            
-                except Exception as e:
-                    logging.warning(f"Failed to process source {src_idx}: {e}")
-                    continue
-            
-            # 3. Dimensional Translation Layer with fallback
-            try:
-                indices = list(matrices_dict.keys())
-                conn_matrix, metadata = self.connections_to_matrix(connections, indices=indices)
-                
-                # Convert to dense matrix for attention computation
-                if hasattr(conn_matrix, "toarray"):
-                    attention_matrix = conn_matrix.toarray()
-                else:
-                    attention_matrix = conn_matrix
-                
-                # Extract attention weights from query to keys
-                q_idx = indices.index('q')
-                attention_weights = []
-                
-                for i in range(len(key_projs)):
-                    try:
-                        k_idx = indices.index(f'k{i}')
-                        if q_idx < attention_matrix.shape[0] and k_idx < attention_matrix.shape[1]:
-                            attention_weights.append(attention_matrix[q_idx, k_idx])
-                        else:
-                            attention_weights.append(0.1)  # Default low attention
-                    except (ValueError, IndexError):
-                        attention_weights.append(0.1)  # Default for missing connections
-                
-            except Exception as e:
-                logging.warning(f"Connection matrix processing failed: {e}, using uniform weights")
-                attention_weights = [1.0] * len(key_projs)
-            
-            # Ensure we have weights for each key
-            if len(attention_weights) != len(key_projs):
-                attention_weights = [1.0] * len(key_projs)
-            
-            # Normalize weights using softmax with numerical stability
-            try:
-                attention_weights = np.array(attention_weights)
-                # Subtract max for numerical stability
-                attention_weights = attention_weights - np.max(attention_weights)
-                weights_exp = np.exp(attention_weights)
-                weights_sum = np.sum(weights_exp)
-                
-                if weights_sum > 1e-10:
-                    normalized_weights = weights_exp / weights_sum
-                else:
-                    normalized_weights = np.ones_like(weights_exp) / len(weights_exp)
-            except Exception as e:
-                logging.warning(f"Weight normalization failed: {e}, using uniform weights")
-                normalized_weights = np.ones(len(key_projs)) / len(key_projs)
-            
-            # 4. Value Processing and Aggregation
-            query_type = self._detect_matrix_type(query_np)
-            target_shape = query_np.shape
-            
-            # Process values with comprehensive shape handling
-            processed_values = []
-            
-            for i, v in enumerate(value_arrays):
-                try:
-                    # Handle shape differences using tensor conversion if needed
-                    if v.shape != target_shape:
-                        if hasattr(self, 'tensor_to_matrix') and hasattr(self, 'matrix_to_tensor'):
-                            try:
-                                # Use tensor conversion pipeline for complex shape differences
-                                query_2d, tensor_metadata = self.tensor_to_matrix(query_np)
-                                v_2d, _ = self.tensor_to_matrix(v)
-                                
-                                # Apply transformation
-                                transform_method = self._get_transform_method(query_type)
-                                if transform_method is not None:
-                                    v_transformed = transform_method(v_2d)
-                                else:
-                                    v_transformed = v_2d.copy()
-                                
-                                # Convert back to target shape
-                                v_processed = self.matrix_to_tensor(v_transformed, tensor_metadata, 
-                                                                original_shape=target_shape)
-                                processed_values.append(v_processed)
-                                
-                            except Exception as e:
-                                logging.warning(f"Tensor conversion failed for value {i}: {e}")
-                                # Fallback to simple reshaping
-                                v_reshaped = self._reshape_to_target(v, target_shape)
-                                processed_values.append(v_reshaped)
-                        else:
-                            # Simple reshaping fallback
-                            v_reshaped = self._reshape_to_target(v, target_shape)
-                            processed_values.append(v_reshaped)
-                    else:
-                        # Compatible shapes - apply transformation if needed
-                        transform_method = self._get_transform_method(query_type)
-                        if transform_method is not None:
-                            v_processed = transform_method(v)
-                        else:
-                            v_processed = v.copy()
-                        processed_values.append(v_processed)
-                        
-                except Exception as e:
-                    logging.warning(f"Value processing failed for index {i}: {e}")
-                    # Use reshaped query as fallback
-                    fallback_value = self._reshape_to_target(query_np, target_shape)
-                    processed_values.append(fallback_value)
-            
-            # Ensure we have processed values
-            if not processed_values:
-                processed_values = [query_np.copy()]
-                normalized_weights = np.array([1.0])
-            
-            # 5. Weighted Aggregation with shape safety
-            result = None
-            total_weight_used = 0.0
-            
-            for w, v in zip(normalized_weights, processed_values):
-                if w <= 1e-10:  # Skip near-zero weights
-                    continue
-                    
-                try:
-                    if result is None:
-                        result = w * v
-                        total_weight_used = w
-                    else:
-                        # Ensure shape compatibility
-                        if result.shape == v.shape:
-                            result += w * v
-                            total_weight_used += w
-                        else:
-                            # Force compatibility by reshaping
-                            v_compatible = self._reshape_to_target(v, result.shape)
-                            result += w * v_compatible
-                            total_weight_used += w
-                            
-                except Exception as e:
-                    logging.warning(f"Failed to aggregate value with weight {w}: {e}")
-                    continue
-            
-            # Fallback if aggregation completely failed
-            if result is None or total_weight_used < 1e-10:
-                result = query_np.copy()
-                normalized_weights = np.array([1.0])
-            else:
-                # Normalize result by total weight used for numerical stability
-                if total_weight_used > 1e-10 and abs(total_weight_used - 1.0) > 1e-6:
-                    result = result / total_weight_used
-            
-            # 6. Final transformation to preserve query type
-            try:
-                final_transform = self._get_transform_method(query_type)
-                if final_transform is not None:
-                    result = final_transform(result)
-            except Exception as e:
-                logging.warning(f"Final transformation failed: {e}")
-            
-            # 7. Update quantum field with hyperdimensional connections
-            if hasattr(self, 'quantum_field') and hasattr(self, '_update_quantum_field'):
-                try:
-                    # Extract attention scores from connection strengths
-                    field_attention_scores = {}
-                    
-                    # Map connection strengths to matrix type names
-                    matrix_type_names = list(self.matrix_graph.keys()) if hasattr(self, 'matrix_graph') else []
-                    
-                    for src_idx, targets in connections.items():
-                        if targets and src_idx == 'q':  # Focus on query connections
-                            avg_strength = np.mean([t['strength'] for t in targets])
-                            
-                            # Map to matrix type names if available
-                            for i, target in enumerate(targets):
-                                if i < len(matrix_type_names):
-                                    field_attention_scores[matrix_type_names[i]] = target['strength']
-                            
-                            # Add overall query strength
-                            field_attention_scores['query_strength'] = avg_strength
-                    
-                    # Update quantum field
-                    self._update_quantum_field(result, field_attention_scores, 0.03)
-                    
-                except Exception as e:
-                    logging.warning(f"Quantum field update failed: {e}")
-            
-            # 8. Convert back to original tensor format if needed
-            if original_is_tensor:
-                try:
-                    result = torch.tensor(result, device=original_device, dtype=original_dtype)
-                except Exception as e:
-                    logging.warning(f"Failed to convert result back to tensor: {e}")
-            
-            return result, normalized_weights.tolist()
-            
-        except ValueError as ve:
-            # Re-raise ValueError (like "Query cannot be None") to maintain API contract
-            raise ve
-        except Exception as e:
-            logging.error(f"Hyperdimensional attention failed completely: {e}")
-            # Return query as fallback for other exceptions
-            return query.copy() if hasattr(query, 'copy') else query, [1.0]
-
-    def _reshape_to_target(self, matrix, target_shape):
-        """
-        Helper method to safely reshape matrix to target shape with padding/cropping.
-        
-        Args:
-            matrix: Input matrix to reshape
-            target_shape: Desired output shape
-            
-        Returns:
-            np.ndarray: Reshaped matrix
-        """
-        try:
-            if matrix.shape == target_shape:
-                return matrix.copy()
-            
-            # Create result matrix with target shape
-            result = np.zeros(target_shape, dtype=matrix.dtype)
-            
-            # Calculate overlapping region
-            min_dims = [min(matrix.shape[i], target_shape[i]) for i in range(min(len(matrix.shape), len(target_shape)))]
-            
-            # Handle different dimensionalities
-            if len(matrix.shape) == len(target_shape):
-                # Same dimensionality - copy overlapping region
-                if len(min_dims) == 1:
-                    result[:min_dims[0]] = matrix[:min_dims[0]]
-                elif len(min_dims) == 2:
-                    result[:min_dims[0], :min_dims[1]] = matrix[:min_dims[0], :min_dims[1]]
-                elif len(min_dims) == 3:
-                    result[:min_dims[0], :min_dims[1], :min_dims[2]] = matrix[:min_dims[0], :min_dims[1], :min_dims[2]]
-                # Add more cases as needed
-            else:
-                # Different dimensionalities - flatten and reshape
-                flat_matrix = matrix.flatten()
-                flat_result = result.flatten()
-                copy_length = min(len(flat_matrix), len(flat_result))
-                flat_result[:copy_length] = flat_matrix[:copy_length]
-                result = flat_result.reshape(target_shape)
-            
-            return result
-            
-        except Exception as e:
-            logging.warning(f"Reshape failed: {e}, returning zeros")
-            # More robust fallback that doesn't rely on numpy.zeros
-            try:
-                return np.zeros(target_shape, dtype=np.float64)
-            except Exception:
-                # Ultimate fallback if even np.zeros fails
-                try:
-                    # Create zeros manually using list comprehension
-                    if len(target_shape) == 1:
-                        return np.array([0.0] * target_shape[0])
-                    elif len(target_shape) == 2:
-                        return np.array([[0.0] * target_shape[1] for _ in range(target_shape[0])])
-                    else:
-                        # For higher dimensions, create a minimal array
-                        return np.array([0.0]).reshape((1,) * len(target_shape))
-                except Exception:
-                    # Last resort - return 1D array of zeros
-                    return np.array([0.0])
-    
-    def _extract_feature_vector(self, matrix, num_dims):
-        """Extract a feature vector from matrix for hyperdimensional comparison"""
-        # Handle different matrix types and dimensions
-        if isinstance(matrix, torch.Tensor):
-            matrix_np = matrix.detach().cpu().numpy()
-        else:
-            matrix_np = matrix
-            
-        # For higher-dimensional tensors, use tensor projection
-        if matrix_np.ndim > 2:
-            matrix_2d, _ = self.tensor_to_matrix(matrix_np)
-            flat_values = matrix_2d.flatten()
-        else:
-            flat_values = matrix_np.flatten()
-        
-        # Extract key features using various statistics
-        features = []
-        
-        # Basic statistics
-        try:
-            features.append(np.mean(flat_values))
-            features.append(np.std(flat_values))
-            features.append(np.median(np.abs(flat_values)))
-            features.append(np.percentile(flat_values, 90))
-            
-            # Sparsity feature
-            features.append(np.sum(np.abs(flat_values) < 1e-10) / max(1, flat_values.size))
-            
-            # Eigenvalue features if matrix is square
-            if matrix_np.ndim == 2 and matrix_np.shape[0] == matrix_np.shape[1]:
-                try:
-                    eigenvalues = np.linalg.eigvals(matrix_np)
-                    features.append(np.mean(np.abs(eigenvalues)))
-                    features.append(np.std(np.abs(eigenvalues)))
-                except:
-                    features.extend([0.5, 0.5])  # Default values on failure
-        except:
-            # Add default values if calculation fails
-            features = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-        
-        # Ensure we have the right number of dimensions
-        if len(features) < num_dims:
-            features.extend([0.0] * (num_dims - len(features)))
-        
-        # Return vector of appropriate dimension
-        return np.array(features[:num_dims])
-
-    def _apply_energy_preserving_constraints(self, matrix, target_energy):
-        """Apply geometric constraints with strict energy preservation."""
-        # Handle empty matrix case
-        if matrix.size == 0:
-            return matrix.copy()
-        
-        # Get dimension and calculate hypercube side length
-        dim = max(1, matrix.shape[0])
-        
-        # Always strictly enforce the energy at the end of the function
-        result = matrix.copy()
-        current_energy = np.linalg.norm(result)
-        
-        # Only scale if we have non-zero energy
-        if current_energy > 1e-10:
-            result = result * (target_energy / current_energy)
-        elif target_energy > 0:
-            # If matrix is zero but we need non-zero energy
-            random_matrix = np.random.randn(*matrix.shape)
-            random_energy = np.linalg.norm(random_matrix)
-            if random_energy > 1e-10:
-                result = random_matrix * (target_energy / random_energy)
-        
-        # Remove or modify the hypercube constraints if they're interfering with energy preservation
-        # Always ensure energy is preserved at the end
-        final_energy = np.linalg.norm(result)
-        if final_energy > 1e-10 and abs(final_energy - target_energy) > 1e-10:
-            result = result * (target_energy / final_energy)
-            
-        return result
-                
-    def validate_matrix_input(self, matrix, required_dims=None, default_shape=None, 
-                             to_tensor=False, device=None):
-        """Validate matrix input with flexible support for both numpy arrays and tensors."""
-        # Handle None input case
-        if matrix is None:
-            return None
-            
-        # Get device from instance if not provided
-        device = device or getattr(self, 'device', None)
-        
-        # Handle numpy arrays - only convert if to_tensor is True
-        if isinstance(matrix, np.ndarray):
-            if to_tensor:
-                try:
-                    matrix = torch.tensor(matrix, device=device, dtype=torch.float32)
-                except Exception as e:
-                    logging.error(f"Failed to convert numpy array to tensor: {e}")
-                    # If conversion fails, keep as numpy array
-        
-        # Handle tensors that need device transfer
-        elif isinstance(matrix, torch.Tensor) and device and matrix.device != device:
-            try:
-                matrix = matrix.to(device=device)
-            except Exception as e:
-                logging.error(f"Failed to transfer tensor to device {device}: {e}")
-        
-        # Handle tensors when to_tensor is False (convert to numpy)
-        if isinstance(matrix, torch.Tensor) and not to_tensor:
-            try:
-                matrix = matrix.detach().cpu().numpy()
-            except Exception as e:
-                logging.error(f"Failed to convert tensor to numpy array: {e}")
-        
-        # Validate dimensions
-        if required_dims is not None:
-            current_dims = matrix.ndim if isinstance(matrix, np.ndarray) else matrix.dim()
-            
-            # Add dimensions if needed
-            while current_dims < required_dims:
-                if isinstance(matrix, np.ndarray):
-                    matrix = np.expand_dims(matrix, axis=0)
-                else:  # torch.Tensor
-                    matrix = matrix.unsqueeze(0)
-                current_dims += 1
-        
-        # Reshape if default shape provided
-        if default_shape is not None:
-            try:
-                if isinstance(matrix, np.ndarray):
-                    matrix = matrix.reshape(default_shape)
-                else:  # torch.Tensor
-                    matrix = matrix.reshape(default_shape)
-            except Exception as e:
-                logging.warning(f"Failed to reshape matrix to {default_shape}: {e}")
-        
-        return matrix
-
-
 
     def blended_matrix_construction(
         self,
@@ -10012,3 +9434,52 @@ MatrixTransformer._project_matrix_to_container = _project_matrix_to_container
 MatrixTransformer._extract_matrix_from_container = _extract_matrix_from_container
 MatrixTransformer._calculate_metrics = _calculate_metrics
 MatrixTransformer. _create_reactive_property =   _create_reactive_property
+
+
+def _resolve_cid(self, cid, dataset_id=None, per_chunk_metadata_dir=None):
+    """Resolve a CID or element_signature to its element record and chunk via the CID index.
+
+    Returns a dict with keys: element_records_file, chunk_index, element_index (or None) or None if not found.
+    """
+    import gzip
+    import os
+    import json
+    # determine metadata dir
+    if per_chunk_metadata_dir is None:
+        per_chunk_metadata_dir = f"element_metadata_{dataset_id}" if dataset_id else "element_metadata"
+    cid_file = os.path.join(per_chunk_metadata_dir, f"cid_index_{dataset_id}.json.gz") if dataset_id else os.path.join(per_chunk_metadata_dir, "cid_index.json.gz")
+    try:
+        if not os.path.exists(cid_file):
+            return None
+        with gzip.open(cid_file, 'rt', encoding='utf-8') as f:
+            idx = json.load(f)
+        return idx.get(cid)
+    except Exception:
+        return None
+
+
+def _load_element_record(self, element_records_file, element_index=None):
+    """Load element records from a per-chunk file (gzipped) and optionally return a single element by index."""
+    import gzip, json, os
+    try:
+        if not os.path.exists(element_records_file):
+            return None
+        with gzip.open(element_records_file, 'rt', encoding='utf-8') as f:
+            data = json.load(f)
+        if element_index is None:
+            return data
+        # find element by element_index
+        els = data.get('element_records', [])
+        for e in els:
+            try:
+                if int(e.get('element_index')) == int(element_index):
+                    return e
+            except Exception:
+                continue
+        return None
+    except Exception:
+        return None
+
+
+MatrixTransformer.resolve_cid = _resolve_cid
+MatrixTransformer.load_element_record = _load_element_record

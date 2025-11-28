@@ -1,437 +1,120 @@
-# TensorPack
-[![PyPI version](https://img.shields.io/pypi/v/tensorpack-f.svg)](https://pypi.org/project/tensorpack-f/)
-[![Python Versions](https://img.shields.io/pypi/pyversions/tensorpack-f.svg)](https://pypi.org/project/tensorpack-f/)
-[![License](https://img.shields.io/pypi/l/tensorpack-f.svg)](https://github.com/fikayoAy/tensorpack/blob/main/LICENSE)
-[![Ask for Help](https://img.shields.io/badge/help-open%20an%20issue-brightgreen)](https://github.com/fikayoAy/tensorpack/issues/new)
-[![Request Access](https://img.shields.io/badge/Request%20License-Form-blue)](https://docs.google.com/forms/d/e/1FAIpQLSe99mLhzKhcGwM8gvmw4Bf-Z5j0FMBmDHuUavN06mSZ55LgiA/viewform?usp=sharing)
-
-
-[![PyPI version](https://img.shields.io/pypi/v/tensorpack-f.svg)](https://pypi.org/project/tensorpack-f/)
-[![Python Versions](https://img.shields.io/pypi/pyversions/tensorpack-f.svg)](https://pypi.org/project/tensorpack-f/)
-[![License](https://img.shields.io/pypi/l/tensorpack-f.svg)](https://github.com/fikayoAy/tensorpack/blob/main/LICENSE)
-
-
-## What it is
-
-_A compact CLI toolkit to convert, analyze and discover relationships across datasets (tensors, matrices, tabular, text and more)._  
-
-TensorPack is a software product with a command-line interface (CLI) that helps convert and analyze data between different formats. It focuses on converting tensors (multi-dimensional arrays) to matrices (2D arrays) and vice versa, and it also helps discover and understand connections between different datasets.
-
-TensorPack builds upon the foundation of [MatrixTransformer](https://github.com/fikayoAy/MatrixTransformer), providing a higher-level interface and additional features for data analysis and transformation. While MatrixTransformer offers core matrix manipulation capabilities, TensorPack extends these with comprehensive CLI tools, semantic analysis, relationship discovery, and visualization features for complex data workflows.
-
-## Supported File Formats
-
-TensorPack supports a wide range of input and output formats:
-
-### Data Formats
-- **JSON**: `.json` - Structured data with support for multi-dimensional arrays
-- **CSV/TSV**: `.csv`, `.tsv` - Comma and tab-separated values
-- **Excel**: `.xlsx`, `.xls` - Microsoft Excel workbooks
-- **NumPy**: `.npy`, `.npz` - NumPy binary array formats (optimized for large datasets)
-
-### Media Formats
-- **Images**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.tif`, `.tiff`, `.gif` - With optional OCR text extraction
-- **Videos**: `.mp4`, `.avi`, `.mov`, `.wmv`, `.flv`, `.mkv`, `.webm` - Frame-based analysis supported
-
-### Text Formats
-- **Documents**: `.txt`, `.md`, `.html`, `.xml` - Plain text and markup formats
-- **Source Code**: `.py`, `.js`, `.java`, `.c`, `.cpp`, `.h`, `.rb`, `.go`, `.rs`, `.php`, `.ts` - Programming language files
-
-### Custom Format Support
-TensorPack supports **extensible format handling** through custom transforms. You can add support for any proprietary or specialized format (including `.parquet`, `.hdf5`, `.mat`, etc.) by registering custom Python transforms that act as file loaders.
-# Quick Note
-custom format support is not avaiable via programmatic use but avaiable in pypi you can download via python -m pip install tensorpack-f==0.1.8
-
-
-## CLIP-based Semantic Extraction
-
-TensorPack now uses a CLIP-based semantic extractor for images and videos (via `open_clip`).
-This replaces the earlier OCR-first approach. Note:
-
-- CLIP does not perform OCR or provide bounding boxes. Instead it produces
-  image embeddings useful for semantic search, similarity and zero-shot
-  classification.
-- The default model configured is a Metaclip variant (`metaclip_400m`) with
-  `ViT-B-32` but you can change this via the `configure_clip` function in
-  `tensorpack.ocr_integration` (keeps backwards-compatible alias `configure_ocr`).
-
-Quick example (Python):
-
-```python
-import open_clip
-model, _, preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='metaclip_400m')
-tokenizer = open_clip.get_tokenizer('ViT-B-32')
-```
-
-If you need true OCR with bounding boxes, keep using an external OCR tool
-or add a custom transform that wraps an OCR backend (e.g., Tesseract or
-PaddleOCR).
-
-## Table of Contents
-
-- [Pain Point Analysis](#pain-point-analysis)
-  - [Core Problem](#core-problem)
-  - [How TensorPack Helps](#how-tensorpack-helps)
-  - [Benefits](#benefits)
-- [How It Works](#how-it-works)
-  - [1. Adding Custom Transformations](#1-adding-custom-transformations)
-  - [2. Entity Search & Analysis](#2-entity-search--analysis)
-  - [3. Semantic Connection Discovery](#3-semantic-connection-discovery)
-  - [4. Semantic Analysis](#4-semantic-analysis)
-- [License](#license)
-  - [License Types](#license-types)
-  - [Machine Binding](#machine-binding)
-- [Installation](#installation)
-- [Return Structure Documentation](#return-structure-documentation)
-- [Command Reference](#command-reference)
-
-## Pain Point Analysis
-
-_High-level problems TensorPack aims to solve._
-
-
----
-### Core Problem
-
-_Complex, multi-dimensional data is hard to convert and analyze while preserving relationships._  
-
-Working with complex, multi-dimensional data (tensors) is difficult. Converting them into usable formats often breaks important relationships, and analyzing connections across different datasets requires time, expertise, and custom code.
-
----
-### How TensorPack Helps
-
-_Core capabilities that make data conversion and discovery practical and repeatable._
-
-1. **Seamless Data Conversion**
-  - Easily switch between tensors (multi-dimensional arrays) and matrices (2D arrays).
-  - Preserve relationships and metadata during transformations.
-2. **Custom Data Transformations**
-  - Define your own transformation rules using Python, external executables, or config files.
-  - Adapt to diverse data sources and domains without rewriting code.
-3. **Relationship Discovery**
-  - Automatically detect and analyze relationships across datasets.
-  - Includes semantic analysis, entity linking, and visualization support.
-4. **Explorable Connections**
-  - Navigate data as a graph: find pathways, discover bridges, and search across datasets.
-  - Export results in multiple formats for further analysis.
-
-
-### Benefits
-
-_What teams gain by using TensorPack._
-
-- **Reduced Complexity:** Simplifies handling of multi-dimensional, multi-modal data.
-- **Semantic Preservation:** Maintains meaning and relationships across all transformations.
-- **Automation:** Automatically discovers relationships and patterns across datasets, images, and videos.
-- **Flexibility:** Handles standard formats (json, csv, excel) and multi-modal inputs.
-- **Custom Transform Extensibility:** Users can add support for proprietary formats (text, tabular, images, videos) via Python, external executables, or configuration files.
-- **Rich Visualization & Export:**
-  - **Visuals:** Interactive html visualizations, png static plots, publication-ready pdf reports
-  - **Data/Analysis:** json, csv, excel, parquet, sqlite
-  - **Documentation:** markdown, html
-- **Contextual Understanding:** Retains semantic context and relationships across all operations, ensuring results remain meaningful and interpretable.
----
-
-## How It Works
-
-_A brief workflow overview showing what you can do with TensorPack._
-
-### 1. Adding Custom Transformations
-_Register reusable transforms to convert, load or extend data formats (Python, executables, configs)._  
-Click the thumbnail to open the demo video.
-[![Adding Custom Transformations](docs/commands/img/add-transform.png)](https://youtu.be/MPjSGoGCelQ)
-
-```bash
-# Add a custom transformation
-tensorpack add-transform \
-  --name "custom_transform" \
-  --data-type "matrix" \
-  --source-type "python" \
-  --source "transform.py" \
-  --function-name "transform_func" \
-  --properties "dimension=3,normalize=true" \
-  --export-formats "json,html,excel"
-```
-
-#### Custom file loader — Extension via custom Transform
-_Add a transform that can act as a file loader (for example, register a Parquet loader)._  
-Click the thumbnail to open the demo video.
-[![Custom File Loader Extension](docs/commands/img/add-transform1.png)](https://youtu.be/WqD-OlNqjMs)
-
-### Simple walkthrough
-
-Register a new custom Python transform (parquet handler)
-```bash
-tensorpack add-transform \
-  --name parquet_handler \
-  --data-type custom \
-  --source-type python \
-  --source ./parquet_handler.py \
-  --properties handles_format=.parquet,maintains_metadata=true \
-  --test-data sample.parquet \
-  --test-output test_output.np
-```
-
-| Flag | Description |
-|---|---|
-| `--name parquet_handler` | The registry name for the transform. |
-| `--data-type custom` | Category under which the transform is registered (used to filter transforms). |
-| `--source-type python` | Indicates the transform is loaded from a Python file. |
-| `--source ./parquet_handler.py` | Path to the Python source implementing the transform. |
-| `--properties handles_format=.parquet,maintains_metadata=true` | Transform metadata describing handled formats and behavior. |
-| `--test-data sample.parquet` | Run the transform on this sample file as a sanity check during registration. |
-| `--test-output test_output.np` | Path to save the test run output for inspection. |
-
-See the full registration reference: `docs/commands/add_transfrom.md`.
-
----
-
-List installed transforms of type `custom`
-```bash
-tensorpack list-transforms --data-type custom
-```
-
-| Flag | Description |
-|---|---|
-| `--data-type custom` | Filters the list to transforms registered under the `custom` category. |
-
-Use the registered transform while traversing and searching entities
-```bash
-tensorpack traverse-graph \
-  --inputs genes.parquet \
-  --search-entity "PPARG" \
-  --include-metadata \
-  --export-formats all \
-  --output search.json \
-  --apply-transform parquet_handler \
-  --verbose
-```
-
-| Flag | Description |
-|---|---|
-| `--inputs genes.parquet` | Input dataset(s) to analyze; transforms that declare `handles_format` can be applied automatically. |
-| `--search-entity "PPARG"` | The entity term to search for across datasets. |
-| `--include-metadata` | Include dataset and transform metadata in the output for richer context. |
-| `--export-formats all` | Export results in all supported formats (json, html, csv, etc.). |
-| `--output search.json` | Path to save the exported search results. |
-| `--apply-transform parquet_handler` | Explicitly apply the named transform during data loading. |
-| `--verbose` | Enable detailed logging during the run. |
-
-TensorPack allows you to extend its file loading capabilities by registering a custom transform that acts as a file loader for new formats. For example, you can add support for `.parquet` files (or any other format not natively supported) by:
-
-1. **Implementing a custom Python transform** that loads the new file type (e.g., using `pandas.read_parquet`).
-2. **Registering the transform** with `tensorpack add-transform`, specifying the file type and indicating that the transform handles loading (using the `handles_format` property in the transform metadata).
-3. **Using the transform** in CLI commands (e.g., `--apply-transform parquet_handler`) to load and process files of the new type, even though TensorPack itself does not have built-in support for that format.
-
-This approach enables seamless integration of proprietary or emerging file formats into your TensorPack workflows, without modifying the core codebase. The video above demonstrates registering and using a custom `.parquet` file loader as a transform.
-
-### 2. Entity Search & Analysis
-_Search, extract and analyze named entities across multiple datasets for discovery and linking._  
-Click the thumbnail to open the demo video.
-[![Entity Search](docs/commands/img/entity-search.png)](https://youtu.be/5YMdhLGR6zs)
-
-```bash
-# Search for entities across datasets
-tensorpack traverse-graph \
-  --inputs "dataset1.json" "dataset2.csv" \
-  --search-entity "Term" \
-  --include-metadata \
-  --export-formats "json,html,excel,graphml" \
-  --output "entity_analysis"
-```
-
----
-
-### 3. Semantic Connection Discovery
-_Discover semantic links, pathways and contextual relationships between datasets._  
-Click the thumbnail to open the demo video.
-[![Semantic Connections](docs/commands/img/sematic1.png)](https://youtu.be/r9pMhrHTcfI)
-
-```bash
-# Discover semantic connections
-tensorpack discover-connections \
-  --source "source_data.json" \
-  --target "target_data.json" \
-  --depth 3 \
-  --min-confidence 0.7 \
-  --include-context \
-  --export-formats "all" \
-  --output "semantic_connections"
-```
-
----
-
-### 4. Semantic Analysis
-_Perform in-depth semantic extraction and visualization to contextualize dataset content._  
-Click the thumbnail to open the demo video.
-[![Semantic Analysis](docs/commands/img/sematic.png)](https://youtu.be/CdMyyu1ZKeo)
-
-```bash
-# Perform semantic analysis
-tensorpack analyze-semantic \
-  --input "dataset.json" \
-  --model "transformer-large" \
-  --extract-entities \
-  --include-relationships \
-  --visualize \
-  --export-formats "html,json,neo4j" \
-  --output "semantic_analysis"
-```
-
----
-
-Each command supports various export formats:
-- `json`: Structured data output
-- `csv`: Tabular format
-- `excel`: Microsoft Excel workbook
-- `html`: Interactive visualizations
-- `parquet`: Columnar storage format
-- `sqlite`: Relational database
-- `png`: Static visualizations
-- `markdown`: Documentation format
-
-Use `--export-formats all` to export in all available formats, or specify individual formats with comma-separated values.
-
-<<<<<<< HEAD
-=======
-## License
-
-To use TensorPack, a license is required. Please request one by filling out the form below.
-
-[![Request a Access](https://www.gstatic.com/images/branding/product/1x/forms_48dp.png)](https://docs.google.com/forms/d/e/1FAIpQLSe99mLhzKhcGwM8gvmw4Bf-Z5j0FMBmDHuUavN06mSZ55LgiA/viewform?usp=sharing&ouid=113684697499334755912)
-
-Click the Google Forms logo above to open the License Request Form.
-
-### Access Types
-
-This platform is freely available for academic use in the UK. For non-academic capabilities, an early access premium access license is available.
-
-TensorPack offers several license tiers:
-
-- **Free**: Basic functionality with limited usage. Machine-bound to prevent abuse.
-- **Trial**: Full functionality for 14 days.
-- **Academic**: Full functionality for academic users (automatically detected via email domain).
-- **Premium**: Full functionality with no limitations.
-
-### Machine Binding
-
-Free licenses are bound to the machine they are activated on. This prevents license abuse while still allowing legitimate free tier usage. If you need to use TensorPack on multiple machines, consider upgrading to a premium license.
->>>>>>> a1a9512b1156bbb48e8e1a5654b149de636024f0
-
-### Privacy Notice
-Information submitted through our license request form will be used **only** to process license requests and provide support. We will **not** sell, rent, or share your data with third parties. All responses are stored securely via Google Forms and are only accessible to the project maintainer.
-
-## Installation
-
-**Requirements**: Python 3.9 or higher
-
-**Recommended Setup**: Create a virtual environment to avoid dependency conflicts:
-
-```bash
-# Create a virtual environment
-python -m venv tensorpack
-
-# Activate the virtual environment (Windows PowerShell)
-tensorpack\Scripts\Activate.ps1
-
-# Install TensorPack
-python -m pip install tensorpack-f==0.1.8
-
-# Verify installation
-tensorpack --help
-```
-
-**Quick Install** (if you prefer to install globally):
-
-```bash
-python -m pip install tensorpack-f==0.1.8
-```
-
-## Quick Reference
-
-After installation, get an overview of all available commands:
-
-```bash
-tensorpack --help
-```
-
-```
-usage: tensorpack [-h] [--activate-license ACTIVATE_LICENSE] [--verbose] [--output OUTPUT] [--json] [--log LOG]
-                  {tensor_to_matrix,matrix_to_tensor,discover-connections,traverse-graph,add-transform,list-transforms,describe-transform,remove-transform,activate-license,license-info,usage-status,upgrade}
-                  ...
-
-TensorPack: CLI tool for tensor-matrix conversions and transformations
-
-positional arguments:
-  {tensor_to_matrix,matrix_to_tensor,discover-connections,traverse-graph,add-transform,list-transforms,describe-transform,remove-transform,activate-license,license-info,usage-status,upgrade}
-                        Command to execute
-    tensor_to_matrix    Convert tensor to matrix
-    matrix_to_tensor    Convert matrix to tensor
-    discover-connections
-                        Discover hidden connections between matrices/tensors with multiple export formats
-    traverse-graph      Discover semantic connections between datasets using three focused exploration modes with multiple export       
-                        formats
-    add-transform       Add a custom transformation to TensorPack
-    list-transforms     List available transformations
-    describe-transform  Describe a specific transformation
-    remove-transform    Remove a transformation from the registry
-    activate-license    Activate a license key
-    license-info        Show current license information
-    usage-status        Show daily usage statistics (free tier)
-    upgrade             Show upgrade information and open upgrade page
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --activate-license ACTIVATE_LICENSE
-                        Activate a license key (paste the key here) (default: None)
-  --verbose, -v         Enable verbose logging (default: False)
-  --output OUTPUT, -o OUTPUT
-                        Output file path (default: None)
-  --json                Output in JSON format (default: False)
-  --log LOG             Log to file (default: None)
-```
-
-### Getting Help for Specific Commands
-
-To see detailed help for any subcommand, use:
-
-```bash
-tensorpack <command> --help
-```
-
-Examples:
-```bash
-# Get help for tensor conversion
-tensorpack tensor_to_matrix --help
-
-# Get help for discovering connections
-tensorpack discover-connections --help
-
-# Get help for graph traversal
-tensorpack traverse-graph --help
-
-# Get help for adding custom transforms
-tensorpack add-transform --help
-```
-
-## Return Structure Documentation
-
-These documents explain the data structures returned by key TensorPack commands:
-
-- [Discover Connections Command](docs/dc_return-structure.md) - Explains the return structure of the `discover_connections_command`, which finds relationships between datasets.
-- [Traverse Graph Command](docs/tg_return_structure.md) - Details the return structure of the `traverse_graph_command`, which explores connections between entities through different traversal modes.
-
-## Command reference
-
-Detailed command documentation is available in the `docs/commands` folder. See the following markdown files for usage, flags, and examples for each command:
-
-- [Add Transform](docs/commands/add_transfrom.md) — Add and manage custom transforms (register loaders, transformers and exporters).
-- [Discover Connection](docs/commands/discover_connection.md) — Discover semantic and contextual connections between datasets.
-- [Matrix to Tensor](docs/commands/matrix_to_tensor.md) — Convert matrices back into tensor representations with metadata preservation.
-- [Tensor to Matrix](docs/commands/tensor_to_matrix.md) — Convert tensors into matrices with optional normalization and metadata extraction.
-- [Traverse Graph](docs/commands/traverse_graph.md) — Traverse dataset graphs, search entities and find pathways across inputs.
-
-There are also example media and additional notes in the [img directory](docs/commands/img/) and sample datasets in the [sample_data directory](docs/commands/sample_data/) to help you get started.
-
-
-
+# tensorpack-f
+
+Tensorpack-f is a graph-based semantic relationship discovery and analysis system that operates in hyperdimensional space to find, rank, and traverse meaningful connections between data entities.
+
+It is a Semantic Graph Engine which builds and queries connection graphs from high-dimensional embeddings and transformations, a Multi-Modal Search Framework that provides 4 specialized search algorithms for different relationship discovery patterns, a Hyperdimensional Navigation System that uses geometric projections and energy-based metrics to traverse semantic spaces, and a Connection Intelligence Platform which enriches raw connections with metadata, previews, and diagnostic information.
+
+## Primary Functions
+
+- Entity-Centric Discovery (entity_search) - Find strongest semantic neighbors for any node
+- Directional Pathfinding (search_directional) - Navigate optimal paths between specific entities using cluster-based algorithms
+- Energy Flow Analysis (search_energy_flow) - Follow energy gradients to discover high-activation pathways
+- Bidirectional Relationship Mining (search_reciprocal) - Identify mutually reinforcing semantic connections
+- Graph Construction (discover_connections) - Build enriched adjacency from MatrixTransformer results
+
+### entity_search
+
+It finds the strongest semantic neighbors for any node from precomputed payload data.
+
+**Steps:**
+- It resolves node identifiers from integer, string, or composite key formats to consistent lookup keys
+- It searches multiple connection indices (connections, by_signature, by_source_row) for matching edges
+- It supports partial matching on source_row for flexible entity lookup
+- It ranks all neighbors by combined_score or strength metrics
+- It deduplicates results while preserving order
+- It returns top-k results or all matches when k is None
+
+**Return Value:** Returns a list of edge dictionaries sorted by strength, each containing:
+- All original edge metadata and metrics
+- `combined_score`, `strength`: connection strength scores
+- `source_dataset_id`, `source_element_index`, `target_element_index`: identification fields
+
+### search_directional
+
+It finds the shortest path from a source node to a target node using cluster-based navigation to traverse a hyperdimensional connection graph.
+
+**Steps:**
+- It resolves start and target nodes from string/numeric identifiers to consistent keys (to the unique id)
+- It uses DynamicGraph (from graph.py) to create an adjacency data
+- From DynamicGraph it calls graph.navigate_cluster(all_nodes) which uses a divide-and-conquer traversal strategy
+- It finds the positions of start and target nodes in the visited order from cluster navigation and then extracts the path segment between them (handling both forward and reverse directions)
+- It builds results by constructing detailed path results with edge information for each step
+- It includes metadata, previews and scores
+- It returns a list of dictionaries representing each edge in the path
+
+**Return Value:** Returns a list of edge dictionaries, each containing:
+- `src`, `tgt`: source and target node IDs
+- `score`: connection strength score
+- `edge`: original edge data with all metrics
+- `source_metadata`, `target_metadata`: node metadata
+- `source_preview`, `target_preview`: content previews
+
+### search_energy_flow
+
+It follows energy gradients through the connection graph to surface high-activation pathways.
+
+**Steps:**
+- It resolves the start node from string/numeric identifiers to a consistent key
+- It gathers all neighbors for the starting node from the adjacency data
+- It computes energy scores using energy_gradient norms (with fallbacks to target_energy or local_energy)
+- It builds result entries with full edge data, metadata, and previews for each neighbor
+- It ranks candidates by energy score in descending order
+- It returns all neighbors or top-k based on the top_k parameter
+
+**Return Value:** Returns a list of edge dictionaries sorted by energy score, each containing:
+- `from`, `to`: source and target node IDs
+- `score`: computed energy flow score
+- `edge`: original edge data with all metrics
+- `source_metadata`, `target_metadata`: node metadata
+- `source_preview`, `target_preview`: content previews
+- `projection_diagnostics`: projection-related diagnostic information
+
+### search_reciprocal
+
+It identifies mutually reinforcing semantic connections by examining reciprocal edges in both directions.
+
+**Steps:**
+- It iterates through all edges in the normalized adjacency data
+- It checks if each edge has a reciprocal_angle metric
+- It looks up the reverse edge (from target back to source)
+- It verifies both directions have reciprocal_angle below the threshold
+- It collects comprehensive metadata for both forward and reverse edges
+- It returns only relationships that are strong in both directions
+
+**Return Value:** Returns a list of edge dictionaries, each containing:
+- `src`, `tgt`: source and target node IDs
+- `reciprocal_angle`, `reciprocal_angle_rev`: angular metrics for both directions
+- `edge`, `rev_edge`: complete edge data for both directions
+- `source_metadata`, `target_metadata`: metadata for both nodes
+- `source_preview`, `target_preview`: content previews
+- `rev_source_metadata`, `rev_target_metadata`: reverse direction metadata
+- `rev_source_preview`, `rev_target_preview`: reverse direction content previews
+
+### discover_connections
+
+It builds enriched adjacency mappings from MatrixTransformer traversal output.
+
+**Steps:**
+- It accesses the traversal adapter from MatrixTransformer via mt._traverse_graph.adjacency()
+- It extracts payload lookup helpers (matrix_metadata, projected_points, proj_dists)
+- It normalizes all numeric values to JSON-serializable formats (converting numpy types)
+- It iterates through raw adjacency and enriches each edge with metadata
+- It attaches source and target metadata from edge-level or payload-level lookups
+- It includes projected coordinates and preview snippets for both nodes
+- It produces ready-to-query semantic graphs with consistent string keys
+
+**Return Value:** Returns a dictionary mapping source node keys to lists of enriched edge dictionaries, each containing:
+- `src`, `tgt`, `target_idx`: source and target node string keys
+- `original`: original edge data from traversal
+- `numeric`: normalized numeric representation
+- `source_metadata`, `target_metadata`: rich metadata for both nodes
+- `source_preview`, `target_preview`: content snippets for quick review
+- `source_projected`, `target_projected`: geometric projection coordinates
+- `projection_diagnostics`: projection quality and diagnostic information
+
+## Use Cases
+
+- Knowledge Discovery - Finding hidden relationships in complex datasets
+- Semantic Search - Content recommendation based on hyperdimensional similarity
+- Network Analysis - Understanding information flow and cluster structures
+- AI/ML Pipeline Integration - Processing MatrixTransformer outputs for downstream analysis
